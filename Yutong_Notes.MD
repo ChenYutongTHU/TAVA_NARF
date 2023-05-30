@@ -42,9 +42,16 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
     * 2. undistort *K,D*
     * 3. resize *resize_factor, default=0.5??*
     * 4. normalize to \[0,1]
-    * 5. prepare camera *(K-intrinsic, resize_factor, extrinsic, self.parser.WIDTH-1024, self.parser.HEIGHT-1024)*  return a dict
+    * 5. prepare camera *(K-intrinsic, resize_factor, extrinsic, self.parser.WIDTH-1024, self.parser.HEIGHT-1024)* return a dict
     * 6. **generate_rays(cameras, opencv_format=True, near=self.near, far=self.far)** near/far-df-null
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L53-L62
+* **Transform image pixel to ray points**
+    * 1. Distort 2D images (D is not included in the Camera())
+      https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L142-L153
+    * 2. Prepare Camera (Exclude distortion and include a resize_factor)
+      https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L156-L163
+      https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L39-L43
+      Now *K* becomes $[[0.5f_x 0 0.5][0 0.5f_y 0.5][0 0 1]$
 
 
 
