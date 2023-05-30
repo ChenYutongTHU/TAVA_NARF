@@ -24,7 +24,8 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/9ba5a227cb9213ca6993929ad902e175
     https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_parser.py#L118-L122
     * Define load_image(), load_mask() 
 https://github.com/ChenYutongTHU/TAVA_NARF/blob/9ba5a227cb9213ca6993929ad902e175f5cf4aab/tava/engines/trainer.py#L77
-
+https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/engines/trainer.py#L99-L104
+* batch_size=1, fetch one frame by one camera at a time and generate a batch of rays.
 https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/configs/dataset/zju.yaml#L1
 https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e62c5ed508/tava/datasets/zju_loader.py#L46
 https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e62c5ed508/tava/datasets/abstract.py#L7
@@ -76,7 +77,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
   https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L83-L84
   https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L117-L122
   * fetch_data() generates the ray directions while preprocess_data() select valid rays and associates them with pixel labels
-  * training: return rays' shape = \[H*W, 3] (note that rays is still a named_tuple in which each item is shaped as \[H*W,3])
+  * training: return rays' shape = \[H*\W, 3] (note that rays is still a named_tuple in which each item is shaped as \[H*\W,3])
 * Step-by-step
   * 1. random background: 
     https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L86
@@ -91,6 +92,21 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
   * 4. Reorder and reshape rays according to the selected indices
     https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L110-L113
     * rays: origins, directions, viewdirs are shaped as (H*W, 3)
+ 
+ ### Training - Optimization
+ * Learning rate
+   https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/engines/trainer.py#L48-L55
+   https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/utils/training.py#L76-L78
+   log-linear interpolation
+ 
+ ### Training - train_step
+ https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/engines/trainer.py#L121
+ * 1. \_preprocess
+   https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/engines/trainer.py#L253
+   * .to(gpu)
+   * 
+ * 
+
     
 
 
