@@ -46,12 +46,28 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
     * 6. **generate_rays(cameras, opencv_format=True, near=self.near, far=self.far)** near/far-df-null
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L53-L62
 * **Transform image pixel to ray points**
-    * 1. Distort 2D images (D is not included in the Camera())
+    * 1. Distort and resize 2D images (D is not included in the Camera())
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L142-L153
     * 2. Prepare Camera (Exclude distortion and include a resize_factor)
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L156-L163
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L39-L43
-      Now *K* becomes $[[0.5f_x 0 0.5][0 0.5f_y 0.5][0 0 1]$
+      Now *K* becomes $[[0.5f_x,0,0.5][0,0.5f_y,0.5][0,0,1]]$
+      *resize_factor=0.5* is equal to moving the image plane closer and scaling the image by $1/2$.
+    * 3. Generate (u,v) grid
+      https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L67-L71
+    * 4. Map (u,v) to ray directions  (camera coordinate)
+      https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L73-L81
+      **?? +0.5**
+    * 5. Rotate (translation is not needed) ray directions (camera coor) to ray directions in the world coor
+      https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L86-L87
+      Now the shape of directions is (n_camera,H,W,3). Please note the equivalence between matrix-product and (hadamard-product+reduce-sum)
+    * 6. Normalize ray directions
+      https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L88
+    * 7. Compute radius?
+      https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L91-L98
+    * 8. Finalize rays generation
+      https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L104-L112
+      Rays() is just a simple namedtuple
 
 
 
