@@ -36,6 +36,9 @@ return self.preprocess(data)
 ```
 * fetch_data() and preprocess() are defined by SubjectLoader() in **zju_loader.py**
 https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e62c5ed508/tava/datasets/zju_loader.py#L124-L127
+#### fetch_data()
+* fetch_data() returns
+   https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L168-L178
 * ZJU is a single-person multi-view video dataset. Each training split has a single *subject_id*. Each sample is tied with *(frame_id, camera_id)*.
 * Step-by-step - **Goal: associate Rays(r,d) and its pixel label**
     * 1. rgba \[H,W,4] $\leftarrow$ self.parser.load_image()^self.parser.load_mask() (^=concat)
@@ -60,7 +63,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
       **?? +0.5**
     * 5. Rotate (translation is not needed) ray directions (camera coor) to ray directions in the world coor
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L86-L87
-      Now the shape of directions is (n_camera,H,W,3). Please note the equivalence between matrix-product and (hadamard-product+reduce-sum)
+      Now the shape of directions is ((n_camera),H,W,3) (Note that in ZJU just H,W,3). Please note the equivalence between matrix-product and (hadamard-product+reduce-sum)
     * 6. Normalize ray directions
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L88
     * 7. Compute radius?
@@ -68,6 +71,27 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
     * 8. Finalize rays generation
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L104-L112
       Rays() is just a simple namedtuple
+ #### preprocess_data()
+* preprocess_data() return
+  https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L83-L84
+  https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L117-L122
+  * fetch_data() generates the ray directions while preprocess_data() select valid rays and associates them with pixel labels
+  * training: return rays' shape = \[H*W, 3] (note that rays is still a named_tuple in which each item is shaped as \[H*W,3])
+* Step-by-step
+  * 1. random background: 
+    https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L86
+    https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L90
+    https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L100
+    * The alpha channel is decided by mask. 0:background 1:foreground 0.5:ignore (fuzzy boundary).
+    * Thus we should ignore places whose alpha is not 0 or 1.
+  * 2. Select num_rays valid rays (alpha is not 0 or 1)
+    https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L105-L108
+  * 3. Tie them with pixel labels
+    https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L109
+  * 4. Reorder and reshape rays according to the selected indices
+    https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L110-L113
+    * rays: origins, directions, viewdirs are shaped as (H*W, 3)
+    
 
 
 
