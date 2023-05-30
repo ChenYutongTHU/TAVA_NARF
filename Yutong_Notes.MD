@@ -104,7 +104,17 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
  * 1. \_preprocess
    https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/engines/trainer.py#L253
    * .to(gpu)
-   * 
+   * add "bones_rest","bones_posed",("pose_latent") to data. (Read from self.meta_data using frame_id)
+       * About meta_data
+         https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/engines/trainer.py#L91-L94
+         https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/datasets/zju_loader.py#L180
+         https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/datasets/zju_loader.py#L239-L244
+         * As defined in zju_parser.py - 24 Joints including a root.
+         * meta_ids = frame_ids
+         * bones_rest: named_tuple(heads=None, tails<Location (3,)>, transform<(4,4) matrix>) in canonical space
+         * bones_posed: named_tuple(heads=None, tails<Location (3,)>, transform<(4,4) matrix>) in deformed space
+             * Heads=None means that the transform has already been producted as the tree's order?
+         * pose_latent? meta_data\["params"]?
  * 
 
     
