@@ -69,6 +69,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L88
     * 7. Compute radius?
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L91-L98
+      * Mip-NERF: treat each ray as a cone.
     * 8. Finalize rays generation
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L104-L112
       Rays() is just a simple namedtuple
@@ -98,6 +99,8 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
    https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/engines/trainer.py#L48-L55
    https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/utils/training.py#L76-L78
    log-linear interpolation
+ * Adam
+   https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/engines/trainer.py#L66-L70
  
  ### Training - train_step
  https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/engines/trainer.py#L121
@@ -115,7 +118,23 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
          * bones_posed: named_tuple(heads=None, tails<Location (3,)>, transform<(4,4) matrix>) in deformed space
              * Heads=None means that the transform has already been producted as the tree's order?
          * pose_latent? meta_data\["params"]?
- * 
+ * 2. **Forward**
+   * **Model**
+   ```
+   model:
+   _target_: tava.models.mipnerf_dyn.DynMipNerfModel
+   pos_enc: ${pos_enc} # snarf
+   shading_mode: "implicit_AO"
+   shading_pose_dim: ${dataset.pose_latent_dim} # 78
+   world_dist: ${dataset.world_dist} # 0.3
+   ```
+   https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/mipnerf_dyn.py#L87-L100
+   * Shading_mode: Posing leads to self-occlusion and thus affects shading
+      * None: do not model pose-dependent shading
+      * Implicit: pose-conditioned color (query rgb conditioned on both hidden features and pose)
+      * Implicit_A0: (described in paper), output a scalar - ambient occlusion
+      * Does the MLP not conditioned on View direction?
+   
 
     
 
