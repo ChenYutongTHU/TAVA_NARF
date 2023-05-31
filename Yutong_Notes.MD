@@ -159,8 +159,10 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
         https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L40 
         *PoseConditionDPEncoder* Concatenate PositionalEncoder(x,y,z) and pose latent ($\mathbb{R}^{78}$)
         * Root-finding step-by-step
-          * 1. Initiazlie - 
+          * 1. Initialize - Sec.3.3 Inverse skinning. Use K=5 initialization.
                https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L171-L172
+               As the paper mentioned: 
+          * 2. 
         
         
    * 2. **Forward**
