@@ -126,6 +126,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
          * pose_latent? meta_data\["params"]?
  #### 2. **Forward**
    * 1. **Model:tava.models.mipnerf_dyn.DynMipNerfModel - Canonical space $(x,\Sigma)\rightarrow$(rgb, density, ambient occlusion)**
+      * Shading_mode: Posing leads to self-occlusion and thus affects shading
    ```
    model:
    _target_: tava.models.mipnerf_dyn.DynMipNerfModel
