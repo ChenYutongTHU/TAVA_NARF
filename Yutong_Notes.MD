@@ -125,7 +125,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
                  * now both heads and tails are world coordinates.
          * pose_latent? meta_data\["params"]?
  #### 2. **Forward**
-   * 1. **Model:tava.models.mipnerf_dyn.DynMipNerfModel - Canonical space $(\textbf{x},\textbf{\Sigma})\rightarrow$(rgb, density, ambient occlusion)**
+   * 1. **Model:tava.models.mipnerf_dyn.DynMipNerfModel - Canonical space $(x,\Sigma)\rightarrow$(rgb, density, ambient occlusion)**
    ```
    model:
    _target_: tava.models.mipnerf_dyn.DynMipNerfModel
