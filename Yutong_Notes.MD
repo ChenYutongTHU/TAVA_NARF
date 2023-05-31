@@ -104,7 +104,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
  
  ### Training - train_step
  https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/engines/trainer.py#L121
- * 1. \_preprocess
+ #### 1. \_preprocess
    https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/engines/trainer.py#L253
    * .to(gpu)
    * add "bones_rest","bones_posed",("pose_latent") to data. (Read from self.meta_data using frame_id)
@@ -117,9 +117,13 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
          * bones_rest: named_tuple(heads=None, tails<Location (3,)>, transform<(4,4) matrix>) in canonical space
          * bones_posed: named_tuple(heads=None, tails<Location (3,)>, transform<(4,4) matrix>) in deformed space
              * Heads=None means that the transform has already been producted as the tree's order?
+               * when computing the closest points to each bone, head is computed as
+                  https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/utils/bone.py#L19
+                 * The last column of the transform matrix represents the translation from origin to the head's position?
+                 * now both heads and tails are world coordinates.
          * pose_latent? meta_data\["params"]?
- * 2. **Forward**
-   * **Model**
+ #### 2. **Forward**
+   * 1. **Model**
    ```
    model:
    _target_: tava.models.mipnerf_dyn.DynMipNerfModel
@@ -129,14 +133,41 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
    world_dist: ${dataset.world_dist} # 0.3
    ```
    https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/mipnerf_dyn.py#L87-L100
-   * Shading_mode: Posing leads to self-occlusion and thus affects shading
-      * None: do not model pose-dependent shading
-      * Implicit: pose-conditioned color (query rgb conditioned on both hidden features and pose)
-      * Implicit_A0: (described in paper), output a scalar - ambient occlusion
-      * Does the MLP not conditioned on View direction?
-   
-
-    
+   https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/basic/mipnerf.py#L19-L28
+      * Shading_mode: Posing leads to self-occlusion and thus affects shading
+         * None: do not model pose-dependent shading
+         * Implicit: pose-conditioned color (query rgb conditioned on both hidden features and pose)
+         * Implicit_A0: (described in paper), output a scalar - ambient occlusion
+         * Does the MLP not conditioned on View direction?
+      * **self.pos_enc: Root finding: map a query point on the deformed pose to candidate points on the canonical pose (world coordinate).**
+        ```
+        _target_: tava.models.deform_posi_enc.snarf.SNARFDPEncoder
+         posi_enc:
+           _target_: tava.models.basic.posi_enc.IntegratedPositionalEncoder
+         n_transforms: ${dataset.n_transforms} # 19
+         offset_net_enabled: true
+         offset_pose_dim: ${dataset.pose_latent_dim} # 78
+         offset_constant_zero: false
+         cano_dist: ${dataset.cano_dist} # 0.3
+        ```
+        https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L69-L70
+        Instantiated by hydra
+        * self.posi_enc: *IntegratedPositionalEncoder* position encoder of (x, sigma), designed for Mip-NeRF (cone rays)
+        * self.skin_net: an MLP predicts LBS weights $(x,y,z)\rightarrow (n_transforms+1)$. As mentioned in TAVA-Sec.3.3-ForwardSkinning, 'introducing an additional term $w_{bg}\*I_d$. This term allows the points in the background and empty space to not follow the skeleton when it is deformed'. However, in the code, ${w_{bg}} also depends on $x_c$ while in the paper $w_{bg}$ is point-independent. *PositionalEncoder*
+        https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L17
+        * self.offset_net: Pose-dependent NRigid deformation besides LBS $(x,y,z, P)\rightarrow \delta\in\mathbb{R}^3$
+        https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L40 
+        *PoseConditionDPEncoder* Concatenate PositionalEncoder(x,y,z) and pose latent ($\mathbb{R}^{78}$)
+        * Root-finding step-by-step
+          * 1. Initiazlie - 
+               https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L171-L172
+        
+        
+   * 2. **Forward**
+      * 1. for SNARFDPEncoder
+         https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/mipnerf_dyn.py#L246-L254
+      * 2. 
+         
 
 
 
