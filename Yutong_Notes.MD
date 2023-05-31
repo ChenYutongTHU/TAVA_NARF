@@ -51,6 +51,9 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
     * 5. prepare camera *(K-intrinsic, resize_factor, extrinsic, self.parser.WIDTH-1024, self.parser.HEIGHT-1024)* return a dict
     * 6. **generate_rays(cameras, opencv_format=True, near=self.near, far=self.far)** near/far-df-null
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L53-L62
+      https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L104-L112
+      * directions are not normalized while viewdirs are normalized. The magnitude of directions equal to the corresponding point on the surface of depth=1
+         https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L73-L88
 * **Transform image pixel to ray points**
     * 1. Distort and resize 2D images (D is not included in the Camera())
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L142-L153
@@ -132,7 +135,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
       pos_enc: ${pos_enc} # snarf
       shading_mode: "implicit_AO"
       shading_pose_dim: ${dataset.pose_latent_dim} # 78
-      world_dist: ${dataset.world_dist} # 0.3
+      world_dist: ${dataset.world_dist} # 0.3 only consider rays whose distance to bones are smaller than 0.3
       ```
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/mipnerf_dyn.py#L87-L100
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/basic/mipnerf.py#L19-L28
@@ -197,7 +200,17 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
          https://github.com/ChenYutongTHU/TAVA_NARF/blob/86aa45b40239023ac7949cbf4511d60fe521c88c/tava/models/deform_posi_enc/snarf.py#LL481C6-L481C6
       * 2. Calculate near and far, select rays  (prevent sampling too many empty points)
         https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/mipnerf_dyn.py#L258-L260
-        The closest distance between two segments. (Very convoluted, there might be some elegant understanding utilizing linear algebra).
+         * The closest distance between two segments. (Very convoluted, there might be some elegant understanding utilizing linear algebra).
+         * Only select rays whose distances to the nearest bones are smalled than self.world_size (0.3).
+         * For each selected ray, Near/Far is computed according to the closest point on the rays to the bones. (+- t_margin)
+      * 3. stratified rendering (df num_levels=2)
+         * level_i=0 :sample_along_rays
+            * linearly split \[near,far]
+            * randomized? randomly select a point in each segment: select the endpoint of each segment
+            * generate (means, covs) for mipNeRF
+               https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/basic/mipnerf.py#L345
+               https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/basic/mipnerf.py#L242-L243
+               
          
 
 
