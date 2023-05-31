@@ -123,7 +123,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
                  * now both heads and tails are world coordinates.
          * pose_latent? meta_data\["params"]?
  #### 2. **Forward**
-   * 1. **Model**
+   * 1. **Model:tava.models.mipnerf_dyn.DynMipNerfModel - Canonical space $(\textbf{x},\textbf{\Sigma})\rightarrow$(rgb, density, ambient occlusion)**
    ```
    model:
    _target_: tava.models.mipnerf_dyn.DynMipNerfModel
@@ -139,7 +139,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
          * Implicit: pose-conditioned color (query rgb conditioned on both hidden features and pose)
          * Implicit_A0: (described in paper), output a scalar - ambient occlusion
          * Does the MLP not conditioned on View direction?
-      * **self.pos_enc: Root finding: map a query point on the deformed pose to candidate points on the canonical pose (world coordinate).**
+      * **self.pos_enc: tava.models.deform_posi_enc.snarf.SNARFDPEncoder - Root finding to map a query point on the deformed pose to candidate points on the canonical pose (world coordinate).** (directly return position embedding of canonical point)
         ```
         _target_: tava.models.deform_posi_enc.snarf.SNARFDPEncoder
          posi_enc:
@@ -152,22 +152,44 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
         ```
         https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L69-L70
         Instantiated by hydra
-        * self.posi_enc: *IntegratedPositionalEncoder* position encoder of (x, sigma), designed for Mip-NeRF (cone rays)
+        * self.posi_enc: *IntegratedPositionalEncoder* position encoder of (x, sigma), designed for Mip-NeRF (cone rays) 
         * self.skin_net: an MLP predicts LBS weights $(x,y,z)\rightarrow (n_transforms+1)$. As mentioned in TAVA-Sec.3.3-ForwardSkinning, 'introducing an additional term $w_{bg}\*I_d$. This term allows the points in the background and empty space to not follow the skeleton when it is deformed'. However, in the code, ${w_{bg}} also depends on $x_c$ while in the paper $w_{bg}$ is point-independent. *PositionalEncoder*
         https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L17
         * self.offset_net: Pose-dependent NRigid deformation besides LBS $(x,y,z, P)\rightarrow \delta\in\mathbb{R}^3$
         https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L40 
         *PoseConditionDPEncoder* Concatenate PositionalEncoder(x,y,z) and pose latent ($\mathbb{R}^{78}$)
-        * Root-finding step-by-step
-          * 1. Initialize - Sec.3.3 Inverse skinning. Use K=5 initialization.
-               https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L171-L172
-               As the paper mentioned: 
-          * 2. 
+        * Forward skinning step-by-step
+        https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L230
+            * 1. query LBS weights including background weights - self.skin_net
+               https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L254
+            * 2. query Non-rigid offsets - self.offset_net
+               https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L276
+            * 3. Compute
+               https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L280-L282
+               
+        * Root-finding step-by-step (How to train the root finding step?)
+            * 1. Initialize - Sec.3.3 Inverse skinning. Use K=5 initialization. (no_grad)
+            https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L171-L172
+            * 2. Newton method (no_grad)
+            https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L182
+            Here, we need to compute the Jacobian (gradient of forward_skinning w.r.t x_c) (enable_grad = True)
+            https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L410-L411
+            Iterative optimization 
+            https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L629-L633
+            Note that the optimization is applied on batches of points. For some points that already converge, we need to stop the optimization for then and mask them.
+            * 3. Filter invalid canonical corresponding points 
+            https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L192-L199
+            If canonical points are >0.3 from the nearest bones, then take them.
+            * 4. **Inject gradient!!** Note that we need to inject gradient to the canonical correspondence point otherwise the skin_net and offset_net cannot be trained. See Equation(9) in the paper. Here the code use some trick to inject gradient without changing the value of x_c.
+            https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/deform_posi_enc/snarf.py#L204-L205
+        * The SNARF model also needs to embed the position encoding. (**It's not done in the DynNeRF!!**)
+            https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/deform_posi_enc/snarf.py#L220
         
         
    * 2. **Forward**
       * 1. for SNARFDPEncoder
          https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/mipnerf_dyn.py#L246-L254
+         Note t
       * 2. 
          
 
