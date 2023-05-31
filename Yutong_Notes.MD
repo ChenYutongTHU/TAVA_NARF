@@ -138,6 +138,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
    https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/mipnerf_dyn.py#L87-L100
    https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/basic/mipnerf.py#L19-L28
       * Shading_mode: Posing leads to self-occlusion and thus affects shading
+      * Shading_mode: Posing leads to self-occlusion and thus affects shading
          * None: do not model pose-dependent shading
          * Implicit: pose-conditioned color (query rgb conditioned on both hidden features and pose)
          * Implicit_A0: (described in paper), output a scalar - ambient occlusion
