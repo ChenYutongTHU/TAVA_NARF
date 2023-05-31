@@ -189,10 +189,15 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
         
         
    * 2. **Forward**
-      * 1. for SNARFDPEncoder
+      * 1. Some regularization for skin_net (LBS) and offset_net (Non-rigid deformation)
          https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/mipnerf_dyn.py#L246-L254
-         Note t
-      * 2. 
+         * 1. Skinning weights on the bones should be one-hot.
+         https://github.com/ChenYutongTHU/TAVA_NARF/blob/86aa45b40239023ac7949cbf4511d60fe521c88c/tava/models/deform_posi_enc/snarf.py#L470
+         * 2. Offsets on the bones should be all zero, including the joints.
+         https://github.com/ChenYutongTHU/TAVA_NARF/blob/86aa45b40239023ac7949cbf4511d60fe521c88c/tava/models/deform_posi_enc/snarf.py#LL481C6-L481C6
+      * 2. Calculate near and far, select rays  (prevent sampling too many empty points)
+        https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/mipnerf_dyn.py#L258-L260
+        The closest distance between two segments. (Very convoluted, there might be some elegant understanding utilizing linear algebra).
          
 
 
