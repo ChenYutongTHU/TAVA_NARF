@@ -209,9 +209,35 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
          * level_i=0 :sample_along_rays
             * linearly split \[near,far]
             * randomized? randomly select a point in each segment: select the endpoint of each segment
-            * generate (means, covs) for mipNeRF
+            * generate (means, covs) for mipNeRF (cast_rays)
                https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/basic/mipnerf.py#L345
                https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/basic/mipnerf.py#L242-L243
+         * level_i=1: resample_along_rays (grads are not propagated across levels)
+            * An additional param: weight  
+            * Sample from inverse CDF （Somehow complicated, please re-check it）
+               https://github.com/ChenYutongTHU/TAVA_NARF/blob/7399d1934a06986a2db295d909c02246e4f4e9c1/tava/models/basic/mipnerf.py#L386-L391
+         * query_mlp: note that now samples are (mean, variance) of frustum cones.
+          https://github.com/ChenYutongTHU/TAVA_NARF/blob/01449cd2417c5abbcd17aab2937686d1525acb87/tava/models/basic/mipnerf.py#L127-L130
+            * a. Use SNARFEncoder to find canonical correspondence (IPE embedded):
+               https://github.com/ChenYutongTHU/TAVA_NARF/blob/7399d1934a06986a2db295d909c02246e4f4e9c1/tava/models/mipnerf_dyn.py#L177-L184
+               * x_enc: encoded embedding of x_cano = self.posi_enc(x_cano, x_cov). Note that when transform x_world to x_cano, we don't transform the x_cov.
+               * x_warp: coordinate of x_cano
+               * mask: is_convergence after Newton method **and** is the yielded canonical point in the range (closest distance to the bone < cano_dist0.3)
+               * valid (also a mask): is_convergence after Newton method
+            * b. Query the rgb, density and ambient occlusion of the canonical points.
+               https://github.com/ChenYutongTHU/TAVA_NARF/blob/7399d1934a06986a2db295d909c02246e4f4e9c1/tava/models/mipnerf_dyn.py#L198-L200
+               for canonical points whose mask=False, the returned feature/sigma=
+               https://github.com/ChenYutongTHU/TAVA_NARF/blob/7399d1934a06986a2db295d909c02246e4f4e9c1/tava/models/mipnerf_dyn.py#L211-L216
+               rgb_padding? default=0.001 rgb+-\[-1,1]\*0.001
+            * c. Combine density and rgb (Now we need to use mask to exclude invalid roots)
+              https://github.com/ChenYutongTHU/TAVA_NARF/blob/7399d1934a06986a2db295d909c02246e4f4e9c1/tava/models/mipnerf_dyn.py#L218-L232
+            * d. Final return
+              https://github.com/ChenYutongTHU/TAVA_NARF/blob/7399d1934a06986a2db295d909c02246e4f4e9c1/tava/models/mipnerf_dyn.py#L233
+              Note that now the x_warp is the canonical point with the largest density and valid indicates whether each query world point finds corresponding canonical point. (If for the ith world point, all corresponding canonical points diverge, then mask\[i]=False).
+              https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/engines/trainer.py#L258
+              
+               
+         
                
          
 
