@@ -75,6 +75,8 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
     * 7. Compute radius?
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L91-L98
       * Mip-NERF: treat each ray as a cone.
+      * According to Mip-NeRF Sec3.1: We set r to the width of the pixel in world coordinates scaled by 2/sqrt(12) which yields a cone whose section on the image plane has a variance in x and y that matches the variance of the pixel's footprint.(In the context of digital imaging, a pixel's footprint refers to the physical size or area occupied by a single pixel on a display or image sensor. )
+      * A point (conventional NeRG) -> A 3D Gaussian frustrum: we need to compute the expected PE of all points in the frustrum. It has closed form and we only need to compute the diagonal of the costy variance matrix. 
     * 8. Finalize rays generation
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/1f5bccf8e0e4f802efa826a248cafaa4ffc4d5eb/tava/utils/camera.py#L104-L112
       Rays() is just a simple namedtuple
