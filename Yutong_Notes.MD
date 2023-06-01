@@ -246,13 +246,26 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
          * Weights = alpha\*transparancy (will be used later level_1 sampling).
        * 7. Final output
          https://github.com/ChenYutongTHU/TAVA_NARF/blob/b6a9a771dcd2de32961bf4420ceba8ff6aa6cfcd/tava/models/basic/mipnerf.py#L138-L140
+         * each level of output is restored and filled.
+          https://github.com/ChenYutongTHU/TAVA_NARF/blob/b6a9a771dcd2de32961bf4420ceba8ff6aa6cfcd/tava/models/mipnerf_dyn.py#L362
+          Only for selector=True, rgb is stored as the output, otherwise as the color_bkgd.
          * extra_info=None
-         * ret=(comp_rgb, disp, acc, points)
+         * ret=[(comp_rgb, disp, acc, points)]*n_level
             * comp_rgb shape (N,3)
             * disp inverse to depth (N,)
             * acc ?(N, weights.sum(-1) (is background or foreground
                https://github.com/ChenYutongTHU/TAVA_NARF/blob/b6a9a771dcd2de32961bf4420ceba8ff6aa6cfcd/tava/models/basic/mipnerf.py#L295
             * weights = alpha\*transparency
+ * 2. **Loss computation and Backward**
+   https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/configs/mipnerf_dyn.yaml#L53-L56
+    * 1. RGB loss (Coarse and fine)
+       https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/engines/trainer.py#L267
+       https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/engines/trainer.py#L273
+    * 2. regularization loss (weight=0) 
+    * 3. Backward
+      https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/engines/trainer.py#L298-L299
+       
+   
          
         
               
