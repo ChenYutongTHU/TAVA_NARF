@@ -205,7 +205,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
          * The closest distance between two segments. (Very convoluted, there might be some elegant understanding utilizing linear algebra).
          * Only select rays whose distances to the nearest bones are smalled than self.world_size (0.3).
          * For each selected ray, Near/Far is computed according to the closest point on the rays to the bones. (+- t_margin)
-      * 3. stratified rendering (df num_levels=2)
+      * 3. stratified query (df num_levels=2)
          * level_i=0 :sample_along_rays
             * linearly split \[near,far]
             * randomized? randomly select a point in each segment: select the endpoint of each segment
@@ -234,7 +234,27 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
             * d. Final return
               https://github.com/ChenYutongTHU/TAVA_NARF/blob/7399d1934a06986a2db295d909c02246e4f4e9c1/tava/models/mipnerf_dyn.py#L233
               Note that now the x_warp is the canonical point with the largest density and valid indicates whether each query world point finds corresponding canonical point. (If for the ith world point, all corresponding canonical points diverge, then mask\[i]=False).
-              https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/engines/trainer.py#L258
+       * 4. interpolate along rays?
+         https://github.com/ChenYutongTHU/TAVA_NARF/blob/7399d1934a06986a2db295d909c02246e4f4e9c1/tava/models/mipnerf_dyn.py#L336-L338
+         For query points on one ray, there might be some points which we cannot find valid canonical correpondences and hence cannot query its rgb, density and ao. Thus we need to interpolate its (rgb, density and ao.) by its neighboring valid points.
+        https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/engines/trainer.py#L258
+       * 5. Force Out-of-Range points (closest distance to bone > world_dist=0.3) to density=zero
+        https://github.com/ChenYutongTHU/TAVA_NARF/blob/7399d1934a06986a2db295d909c02246e4f4e9c1/tava/models/mipnerf_dyn.py#L341-L347
+       * 6. Volumn rendering
+         https://github.com/ChenYutongTHU/TAVA_NARF/blob/7399d1934a06986a2db295d909c02246e4f4e9c1/tava/models/mipnerf_dyn.py#L350-L357
+         * Calculate alpha and transparancy.
+         * Weights = alpha\*transparancy (will be used later level_1 sampling).
+       * 7. Final output
+         https://github.com/ChenYutongTHU/TAVA_NARF/blob/b6a9a771dcd2de32961bf4420ceba8ff6aa6cfcd/tava/models/basic/mipnerf.py#L138-L140
+         * extra_info=None
+         * ret=(comp_rgb, disp, acc, points)
+            * comp_rgb shape (N,3)
+            * disp inverse to depth (N,)
+            * acc ?(N, weights.sum(-1) (is background or foreground
+               https://github.com/ChenYutongTHU/TAVA_NARF/blob/b6a9a771dcd2de32961bf4420ceba8ff6aa6cfcd/tava/models/basic/mipnerf.py#L295
+            * weights = alpha\*transparency
+         
+        
               
                
          
