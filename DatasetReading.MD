@@ -35,8 +35,8 @@
         https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tools/process_zju/body_model.py#L99-L109
         Pose param is 
         * **axis–angle representation** （axis, angle). Here the axis-angle representation is a 3d vector whose direction represents the axis and norm represents the counter-clockwise angle (pi).
-        * We then transform it into a quaternion $[cos\frac{\theta}{2}, w\times sin(\frac{\theta}{2})]$
-        * The quaternion is transformed into a matrix. $3\times3$ Thus each pose blendshape has 3\*3=9 params.
+        * We then transform it into a quaternion $[cos\frac{\theta}{2}, \mathbf{w}\times sin(\frac{\theta}{2})]$
+        * The quaternion is transformed into a matrix. $3\times3$ Thus each pose blendshape has 3\*3=9 params. See [Quaternion-derived%20rotation%20matrix](https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Quaternion-derived%20rotation%20matrix)
    * 2. Load meta data from data/zju/CoreView_313/annots.py
    * 3. Load rest post info
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tools/process_zju/main.py#L84-L87
