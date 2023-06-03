@@ -31,6 +31,7 @@
     </tr>
   </tbody>
 </table>
+
 ### Next, be careful that ...
 * Bones (segments) vs Joints (points) are different. 
   * A bone consists of two joints.
