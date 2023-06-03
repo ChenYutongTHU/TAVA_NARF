@@ -8,15 +8,17 @@
       <th>Notations</th>
       <th>Used in</th>
       <th>Representation</th>
+      <th>It defines ..</th>
       <th>misc</th>
     </tr>
   </thead>
   <tbody>
      <tr>
-      <th>Joint position </th>
-      <th>$\mathbf{J_i}\in \mathcal{R}^3$</th>
-      <th>Representation</th>
-      <th>Notations</th>
+      <th>Joint positions </th>
+      <th>$\mathbf{J_i}\in \mathbb{R}^3$</th>
+      <th>(x,y,z)</th>
+      <th>The rest pose and **translation items** in </th>
+      <th>-</th>
     </tr>
   </tbody>
 </table>
