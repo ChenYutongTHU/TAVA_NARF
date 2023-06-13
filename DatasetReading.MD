@@ -8,14 +8,13 @@
     |   └── Wolf_cub_full_RM_2/
     └── zju/
         ├── SMPL_NEUTRAL.pkl
-        |   ├── 'f': faces
-        |   ├── 'shapedirs': shape blend shape
-        |   ├── 'posedirs':  Pose blend shape (6890*3, 207) \#207=23*9
-        |   ├── 'J_regressor': ? numpy [J, n_verts] # Regress joint locations from vertices. (after adding shapedirs)
-        |   ├── 'v_template': [batch_size, n_verts, 3]
-        |   ├── 'kintree_table: parents [J,] 
-        |   └── 'weights': [n_verts, J + 1] 
-        'posedirs', 'shapedirs'
+        |   ├── 'f': faces (13776,3) [[1,2,0],] faces of indices
+        |   ├── 'v_template': [6890, 3] -1.2~0.88
+        |   ├── 'shapedirs': shape blend shape (6890, 3, 10) range -0.072~+0.05, magnitude 1e-2 !!replacement to v_template
+        |   ├── 'posedirs':  Pose blend shape (6890*3, 207-9*J) \#207=23*9 (magnitude ~1e-4) !!replacement to shape
+        |   ├── 'J_regressor': ? numpy [J+1, n_verts] # Regress joint locations from vertices. (after adding shapedirs), very sparse! 6~27 out of 6890 non-zero vertices for a single joint.
+        |   ├── 'kintree_table: parents [J+1,] 
+        |   └── 'weights': [n_verts, J + 1]  very sparse! e.g. 4 out of 24 non-zero joints for v1.
         ├── CoreView_313/
         |   ├── annots.npy #meta_data dict
         |       ├── 'ims': [frame0(dict), frame1(dict), ...] 
