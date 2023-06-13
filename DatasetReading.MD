@@ -18,8 +18,11 @@
         'posedirs', 'shapedirs'
         ├── CoreView_313/
         |   ├── annots.npy #meta_data dict
-        |       ├── 'ims': [frame0, frame1, ...]
-        |       └──?
+        |       ├── 'ims': [frame0(dict), frame1(dict), ...] 
+                     for each frame:
+                     ├── 'ims': ['Camera_B1/000000.jpg', 'Camera_B2/000000.jpg',... , 'Camera_B23/000000.jpg'] (23 views)
+                     └── 'kpts2d': (23,25,3)  (view_id, kpt_id, location)
+        |       └── 'cams': {'K': [3*3,3*3,...,3*3], 'D': [5*1], 'R': [3*3],'T': [3*1]} (23 views)
         |   ├── new_params
         |       ├── 1.npy #save smpl data 
         |           ├── 'shapes': 10-dim         
