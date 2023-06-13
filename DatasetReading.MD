@@ -15,17 +15,24 @@
         |   ├── 'J_regressor': ? numpy [J+1, n_verts] # Regress joint locations from vertices. (after adding shapedirs), very sparse! 6~27 out of 6890 non-zero vertices for a single joint.
         |   ├── 'kintree_table: parents [J+1,] 
         |   └── 'weights': [n_verts, J + 1]  very sparse! e.g. 4 out of 24 non-zero joints for v1.
-        ├── CoreView_313/
+        ├── CoreView_377/
         |   ├── annots.npy #meta_data dict
         |       ├── 'ims': [frame0(dict), frame1(dict), ...] 
                      for each frame:
                      ├── 'ims': ['Camera_B1/000000.jpg', 'Camera_B2/000000.jpg',... , 'Camera_B23/000000.jpg'] (23 views)
                      └── 'kpts2d': (23,25,3)  (view_id, kpt_id, location)
         |       └── 'cams': {'K': [3*3,3*3,...,3*3], 'D': [5*1], 'R': [3*3],'T': [3*1]} (23 views)
-        |   ├── new_params
-        |       ├── 1.npy #save smpl data 
+        |   ├── new_params - estimated SMPL params for each frame
+        |       ├── 0.npy #save smpl data 
         |           ├── 'shapes': 10-dim         
-        |       └──? 
+                ├──  1.npy **as rest pose!!**
+                    ├── 'poses': (1,72) 72=24*3 [0,:3]=[0,0,0] the axis-angle of the root joint is all-zero.
+                    ├── 'shapes': (1,10) -0.1~+0.3
+                    ├── 'Rh': (1,3) global rotation? axis-angle
+                    └── 'Th': (1,3)
+                ├── ...
+                └── 616.npy
+                    
         ├── ...
         └── CoreView_386/
   ```
