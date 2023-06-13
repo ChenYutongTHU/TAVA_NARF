@@ -31,7 +31,7 @@
    * 1. Load SMPL model -  data/zju/SMPL_NEUTRAL.pkl
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tools/process_zju/main.py#L72-L74
       * a nn.Module.
-      * Forwarding (pose_72, shape_10, global_transformation) to SMPL, we can compute (vertices, joints, joints_transform, bones_transform). Note that we have 23+1(root) joints and 23 bones. Each bone's transformation is represented by a 3-d vector? (Rotation+Translation?)
+      * Forwarding (pose_72, shape_10, global_transformation) to SMPL, we can compute (vertices, joints, joints_transform, bones_transform). Note that we have 23+1(root) joints and 23 bones. Each bone's transformation is represented by a 3-d vector (axis-angle)
         https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tools/process_zju/body_model.py#L99-L109
         Pose param is 
         * **axis–angle representation** （axis, angle). Here the axis-angle representation is a 3d vector whose direction represents the axis and norm represents the counter-clockwise angle (pi).
