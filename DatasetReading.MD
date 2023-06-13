@@ -36,7 +36,7 @@
         ├── ...
         └── CoreView_386/
   ```
-* Preprocess the downloaded data,  for each subject id
+* Preprocess the downloaded data,  for each subject id **Convert estimated SMPL-beta/pose params into vertices-3D coordinates and rest->pose bone transformation matrices**
    * 1. Load SMPL model -  data/zju/SMPL_NEUTRAL.pkl
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tools/process_zju/main.py#L72-L74
       * a nn.Module.
