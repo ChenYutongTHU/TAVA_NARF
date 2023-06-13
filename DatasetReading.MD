@@ -25,7 +25,7 @@
         |   ├── new_params - estimated SMPL params for each frame
         |       ├── 0.npy #save smpl data 
         |           ├── 'shapes': 10-dim         
-                ├──  1.npy **as rest pose!!**
+                ├──  1.npy **as rest pose!! we only use shape and force pose as all_zeros**
                     ├── 'poses': (1,72) 72=24*3 [0,:3]=[0,0,0] the axis-angle of the root joint is all-zero.
                     ├── 'shapes': (1,10) -0.1~+0.3
                     ├── 'Rh': (1,3) global rotation? axis-angle
@@ -48,7 +48,7 @@
         * The quaternion is transformed into a matrix. $3\times3$ Thus each pose blendshape has 3\*3=9 params. See [Quaternion-derived rotation matrix](https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Quaternion-derived%20rotation%20matrix)
         * Note that for axis-angle = zero_vector (rest_post), the quaternion is \[1,0,0,0] and the derived rotation matrix is an identity matrix.
    * 2. Load meta data from data/zju/CoreView_313/annots.py, including path/to/each view-frame image, camera params of 23 views, keypoint 2D location. 
-   * 3. Load rest post info
+   * 3. Load rest pose info -- load 1.npy but we only use the shape estimation and set pose to all_zeros
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tools/process_zju/main.py#L84-L87
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tools/process_zju/main.py#L19-L26
       For rest post, pose_params=zero_vector s.t. the 3\*3 derived rotation is an identity matrix; 
@@ -56,7 +56,22 @@
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tools/process_zju/lbs.py#L106-L118
       * J_transformed: the location of posed joints. (Note the the 3D coordinates are the last column of the joint transformation matrix, overall translation from the root joint)
         https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tools/process_zju/lbs.py#L143-L144
-        * **A/rel_transforms**: **relative to** the rest joints, the rigid transformation (R,T) of the posed joints. Note that here R is the same as the cumprod transformation matrix's R but the T is the translation between posed joints and rest joints. This transform is linearly weighted in LBS.
+        * **A/rel_transforms**: **relative to** the rest joints, the rigid transformation (R,T) of the posed joints. Note that here R is the same as the cumprod transformation matrix's R but the T is the translation between posed joints and rest joints. This transform is linearly weighted in LBS. (In load_rest_pose, the rotation part should all be identities and the translation part is the 3D location relative to the head)
         * A_bone: the transformation (relative-to-root) of the bone's head joint.
+   * 4. Load pose info for each frame
+       https://github.com/ChenYutongTHU/TAVA_NARF/blob/87426690eb48698d623c874697b0c6958b3bf05a/tools/process_zju/main.py#L91-L94
+       after stacking all the frames, return data (dict)
+       * "lbs_weights" : (6890,24) (from SMPL)
+       * "rest_verts": (6890, 3) (from SMPL-template + estimated shape)
+       * "rest_joints": (24, 3) (from SMPL-template + estimated shape)
+       * "rest_tfs": (24, 4, 4) (rest_joints, rotation:identity, translation: tail-head location)
+       * "rest_tfs_bone": (24, 4, 4) (~rest-tfs, yet the tfs of the head bone)
+       * "verts": (Nframes, 6890, 3) (from rest_verts + estimated pose (including global r-t))
+       * "joints": (Nframes, 24, 3) (from rest_joints + estimated pose (including global r-t))
+       * "tfs": (Nframes, 24, 4, 4) (from rest_tfs + estimated pose (including global r-t))
+       * "tf_bones": (Nframes, 24, 4, 4)
+       * "params": (Nframes, 24*3+3+3) estimated pose (including global r-t
+       
+      
       
   
