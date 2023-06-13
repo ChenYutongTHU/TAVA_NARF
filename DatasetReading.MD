@@ -41,7 +41,7 @@
         * We then transform it into a quaternion $[cos\frac{\theta}{2}, \mathbf{w}\times sin(\frac{\theta}{2})]$
         * The quaternion is transformed into a matrix. $3\times3$ Thus each pose blendshape has 3\*3=9 params. See [Quaternion-derived rotation matrix](https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation#Quaternion-derived%20rotation%20matrix)
         * Note that for axis-angle = zero_vector (rest_post), the quaternion is \[1,0,0,0] and the derived rotation matrix is an identity matrix.
-   * 2. Load meta data from data/zju/CoreView_313/annots.py
+   * 2. Load meta data from data/zju/CoreView_313/annots.py, including path/to/each view-frame image, camera params of 23 views, keypoint 2D location. 
    * 3. Load rest post info
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tools/process_zju/main.py#L84-L87
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tools/process_zju/main.py#L19-L26
