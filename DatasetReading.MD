@@ -70,7 +70,8 @@
        * "joints": (Nframes, 24, 3) (from rest_joints + estimated pose (including global r-t))
        * "tfs": (Nframes, 24, 4, 4) (from rest_tfs + estimated pose (including global r-t))
        * "tf_bones": (Nframes, 24, 4, 4)
-       * "params": (Nframes, 24*3+3+3) estimated pose (including global r-t
+       * "params": (Nframes, 24*3+3+3) estimated pose (including global r-t)
+       save as data/zju/CoreView_377/pose_data.pt
        
       
       
