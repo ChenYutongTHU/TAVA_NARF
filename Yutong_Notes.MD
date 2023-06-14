@@ -161,7 +161,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
         https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L69-L70
         Instantiated by hydra
         * self.posi_enc: *IntegratedPositionalEncoder* position encoder of (x, sigma), designed for Mip-NeRF (cone rays), used to compute PE of canonical points
-        * self.skin_net: an MLP predicts LBS weights $(x,y,z)\rightarrow (n_transforms+1)$. As mentioned in TAVA-Sec.3.3-ForwardSkinning, 'introducing an additional term $w_{bg}\*I_d$. This term allows the points in the background and empty space to not follow the skeleton when it is deformed'. However, in the code, ${w_{bg}} also depends on $x_c$ while in the paper $w_{bg}$ is point-independent. *PositionalEncoder*
+        * self.skin_net: an MLP predicts LBS weights $(x,y,z)\rightarrow (n_transforms+1)$. As mentioned in TAVA-Sec.3.3-ForwardSkinning, 'introducing an additional term $w_{bg}\*I_d$. This term allows the points in the background and empty space to not follow the skeleton when it is deformed'. However, in the code, ${w_{bg}}$ also depends on $x_c$ while in the paper $w_{bg}$ is point-independent. *PositionalEncoder*
         https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L17
         * self.offset_net: Pose-dependent NRigid deformation besides LBS $(x,y,z, P)\rightarrow \delta\in\mathbb{R}^3$
         https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L40 
