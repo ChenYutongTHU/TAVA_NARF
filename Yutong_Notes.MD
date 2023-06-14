@@ -124,12 +124,12 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
          * meta_ids = frame_ids
          * bones_rest: named_tuple(heads=None, tails<Location (3,)>, transform<(4,4) matrix>) in canonical space
          * bones_posed: named_tuple(heads=None, tails<Location (3,)>, transform<(4,4) matrix>) in deformed space
-             * Heads=None means that the transform has already been producted as the tree's order?
+             * Heads=None means that the transform has already been producted as the tree's order? **YES!**
                * when computing the closest points to each bone, head is computed as
                   https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/utils/bone.py#L19
                  * The last column of the transform matrix represents the translation from origin to the head's position?
                  * now both heads and tails are world coordinates.
-         * pose_latent? meta_data\["params"]?
+         * pose_latent? meta_data\["params"]? 24*3(Joint's axis-angle)+3+3(global rotation+translation)
  #### 2. **Forward**
    * 1. **Model:tava.models.mipnerf_dyn.DynMipNerfModel - Canonical space $(x,\Sigma)\rightarrow$(rgb, density, ambient occlusion)**
       ```
