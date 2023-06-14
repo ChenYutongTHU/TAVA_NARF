@@ -44,7 +44,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
    https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L168-L178
 * ZJU is a single-person multi-view video dataset. Each training split has a single *subject_id*. Each sample is tied with *(frame_id, camera_id)*.
 * Step-by-step - **Goal: associate Rays(r,d) and its pixel label**
-    * 1. rgba \[H,W,4] $\leftarrow$ self.parser.load_image()^self.parser.load_mask() (^=concat)
+    * 1. rgba \[H,W,4] $\leftarrow$ self.parser.load_image()^self.parser.load_mask() (^=concat) (In ZJU, both image width and parser.width are 1024 but the resize_factor is 0.5. So here H/W is 512)
     * 2. undistort *K,D*
     * 3. resize *resize_factor, default=0.5??*
     * 4. normalize to \[0,1]
@@ -93,6 +93,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
     https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L100
     * The alpha channel is decided by mask. 0:background 1:foreground 0.5:ignore (fuzzy boundary).
     * Thus we should ignore places whose alpha is not 0 or 1.
+    * In ZJU, the provided mask is uint8 (0 or 1), however tri_map=True pixels around the boundary is set to 0.5. So not all rays are valid.
   * 2. Select num_rays valid rays (alpha is not 0 or 1)
     https://github.com/ChenYutongTHU/TAVA_NARF/blob/2146465223c669875915e7a754ed7502f482e99f/tava/datasets/zju_loader.py#L105-L108
   * 3. Tie them with pixel labels
