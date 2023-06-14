@@ -71,7 +71,15 @@
        * "tfs": (Nframes, 24, 4, 4) (from rest_tfs + estimated pose (including global r-t))
        * "tf_bones": (Nframes, 24, 4, 4)
        * "params": (Nframes, 24*3+3+3) estimated pose (including global r-t)
-       save as data/zju/CoreView_377/pose_data.pt
+       
+   * 5. save as data/zju/CoreView_377/pose_data.pt **This is going to be used as meta_data in zju_parser.load_meta_data()**
+       https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/engines/trainer.py#L241-L248
+       Note that after reading meta_data from pose_data.pt, the key-value are then processed and reordered in 
+       https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/datasets/zju_loader.py#L180
+       Save as 
+       * bones_rest and bones_posed: include location of the tail joints (23,3) and the head joints' transformation (23,4,4). 
+        https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/datasets/zju_loader.py#L208-L215
+       * pose_latent = params (N, 78)
        
       
       
