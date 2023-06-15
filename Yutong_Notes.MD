@@ -265,6 +265,17 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
     * 2. regularization loss (weight=0) 
     * 3. Backward
       https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/engines/trainer.py#L298-L299
+
+ ### Evaluation 
+ #### Qualitative output
+ * eval_imgs_otf/val_ind/0689_377_92_7.png
+    * 0689: index (concatenate all views and frames in the test/val set, frame first and camera second)
+      https://github.com/ChenYutongTHU/TAVA_NARF/blob/cc1abca172b5aac4b9dc351c291b6028bdfcd944/tava/datasets/zju_loader.py#L41-L42
+    * 377: subject_id
+    * 92: meta_id (in fact, frame_id)
+    * 7: camera_id (start from 0)
+ * 0689_377_92_7_mask.png:rendered accumulated weights per pixel.
+ * 0689_377_92_7.npy: correspondance per pixel shape=(512,512,60？) embedding shape, six canonical points
        
    
          
