@@ -57,7 +57,7 @@
       * J_transformed: the location of posed joints. (Note the the 3D coordinates are the last column of the joint transformation matrix, overall translation from the root joint)
         https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tools/process_zju/lbs.py#L143-L144
         * **A/rel_transforms**: **relative to** the rest joints, the rigid transformation (R,T) of the posed joints. Note that here R is the same as the cumprod transformation matrix's R but the T is the translation between posed joints and rest joints. This transform is linearly weighted in LBS. (In load_rest_pose, the rotation part should all be identities and the translation part is the 3D location relative to the head)
-        * A_bone: the transformation (relative-to-root) of the bone's head joint.
+        * A_bone: the transformation (relative-to-**world_origin**) of the bone's head joint.
    * 4. Load pose info for each frame
        https://github.com/ChenYutongTHU/TAVA_NARF/blob/87426690eb48698d623c874697b0c6958b3bf05a/tools/process_zju/main.py#L91-L94
        after stacking all the frames, return data (dict)
