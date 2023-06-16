@@ -83,6 +83,12 @@
     *  Gr defines how to non-rigidly transform the joint's x-y-z cube in the rest pose to its x-y-z cube in the current pose.
     *  How can we transform a point in the posed coordinate system into its rest coordinate system.
   * This can be easily formulated as
+
+## Evaluation metric
+### PSNR
+  https://github.com/ChenYutongTHU/TAVA_NARF/blob/eaaa2f3036e1d33453ffa1526400ea6d6cdfcac3/tava/utils/training.py#L108-L117
+### SSIM
+  
   
 
  
