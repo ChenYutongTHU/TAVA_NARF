@@ -275,7 +275,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
     * 92: meta_id (in fact, frame_id)
     * 7: camera_id (start from 0)
  * 0689_377_92_7_mask.png:rendered accumulated weights per pixel.
- * 0689_377_92_7.npy: correspondance per pixel shape=(512,512,60？) embedding shape, six canonical points
+ * 0689_377_92_7.npy: correspondance per pixel shape=(512,512,60？) embedding shape, one canonical point, 3d-location, 3\*20 = 60 (20-dim)
        
    
          
