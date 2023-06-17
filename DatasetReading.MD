@@ -79,7 +79,7 @@
        Save as 
        * bones_rest and bones_posed: include location of the tail joints (23,3) and the head joints' transformation (23,4,4). 
         https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/datasets/zju_loader.py#L208-L215
-       * pose_latent = params (N, 78)
+       * pose_latent = params (N, 78) 78 = 3*24 (SMPL-pose params, axis-angle rotation of each bone, (0,0,0) for root) + 3 (global rotation) + 3 (global translation)
        
       
       
