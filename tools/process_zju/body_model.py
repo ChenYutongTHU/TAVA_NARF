@@ -63,8 +63,8 @@ class SMPLlayer(nn.Module):
             val = to_tensor(to_np(data[key]), dtype=dtype)
             self.register_buffer(key, val)
         # indices of parents for each joints
-        parents = to_tensor(to_np(data['kintree_table'][0])).long()
-        parents[0] = -1
+        parents = to_tensor(to_np(data['kintree_table'][0])).long() #24,
+        parents[0] = -1 #force to -1
         self.register_buffer('parents', parents)
 
     def forward(self,
@@ -92,28 +92,29 @@ class SMPLlayer(nn.Module):
         bn = poses.shape[0]
         if Rh is None:
             Rh = torch.zeros(bn, 3, device=poses.device)
-        rot = batch_rodrigues(Rh)
-        transl = Th.unsqueeze(dim=1)
+        rot = batch_rodrigues(Rh) #(B,3,3)
+        transl = Th.unsqueeze(dim=1) #3,1
         if shapes.shape[0] < bn:
             shapes = shapes.expand(bn, -1)
         vertices, joints, joints_transform, bones_transform = lbs(
-            shapes,
-            poses,
-            self.v_template,
-            self.shapedirs,
-            self.posedirs,
-            self.J_regressor,
-            self.parents,
-            self.weights,
+            shapes, #(B,10) SMPL-param
+            poses,  #(B,3*24) SMPL-param
+            self.v_template, #(6890,3)
+            self.shapedirs, #(6890,3,10)
+            self.posedirs, #(6890,3,3*23) -> (3*23, 6890*3)
+            self.J_regressor, #(24,6890)
+            self.parents, #24
+            self.weights, #6890,24
             new_params=new_params,
         )
+        #vertices(B,6890,3), joints(B,24,3), joints_transform(relative to rest)(B,24,4,4), bones_transform(B,24,4,4)
 
-        global_transform = torch.eye(4, dtype=rot.dtype, device=rot.device)
+        global_transform = torch.eye(4, dtype=rot.dtype, device=rot.device) #4,4 [R|T]
         global_transform[:3, :3] = rot * scale
-        global_transform[:3, 3] = transl
+        global_transform[:3, 3] = transl #3,1
 
-        vertices = torch.matmul(vertices, rot.transpose(1, 2)) * scale + transl
-        joints = torch.matmul(joints, rot.transpose(1, 2)) * scale + transl
-        joints_transform = torch.einsum("ij,...jk->...ik", global_transform, joints_transform)
-        bones_transform = torch.einsum("ij,...jk->...ik", global_transform, bones_transform)
-        return vertices, joints, joints_transform, bones_transform
+        vertices = torch.matmul(vertices, rot.transpose(1, 2)) * scale + transl #(B,N,3)
+        joints = torch.matmul(joints, rot.transpose(1, 2)) * scale + transl #(B,N,3)
+        joints_transform = torch.einsum("ij,...jk->...ik", global_transform, joints_transform) #(B,4-i,4-j) (B,24,4-j,4-k) (B,24,4,4)
+        bones_transform = torch.einsum("ij,...jk->...ik", global_transform, bones_transform) #(B,4-i,4-j) (B,24,4-j,4-k) (B,24,4,4)
+        return vertices, joints, joints_transform, bones_transform #(B,6890,3) (B,24,3) (B,24,4,4) (B,24,4,4)

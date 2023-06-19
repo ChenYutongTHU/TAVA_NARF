@@ -3,6 +3,7 @@
 """Launch jobs."""
 import logging
 import os
+os.environ["OPENCV_IO_ENABLE_OPENEXR"]="1"
 import random
 from os import path
 from typing import Any

@@ -178,6 +178,7 @@ class SNARFDPEncoder(nn.Module):
                 with_bkgd=self.with_bkgd,
             )  # [B, N, I, 3]
 
+            #import ipdb; ipdb.set_trace()
             # Root finding to get the corresponded canonical points.
             x_cano, valid, _ = self._search_canonical(
                 x,
@@ -220,6 +221,7 @@ class SNARFDPEncoder(nn.Module):
             x_enc = self.posi_enc((x_cano, x_cov))
         else:
             x_enc = self.posi_enc(x_cano)
+        # import ipdb; ipdb.set_trace()
         return x_enc, x_cano, mask, valid
 
     def query_weights(self, x_cano: Tensor, mask: Tensor = None):
