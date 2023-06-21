@@ -172,9 +172,30 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
                https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L254
             * 2. query Non-rigid offsets - self.offset_net
                https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L276
+               Note that the input_dim to the offsetMLP is 105 = 3*(4*2+1)+78
+               3 - 3d coordinate for each point
+               4*2+1 - cos/sin highest-frequency=4 + 1 (include x,y,z itself)
+               78 - pose latent (24*3 axis-angle +3+3)
             * 3. Compute
                https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L280-L282
-               
+            Some tricks:
+            * 1. self.n_transforms=19 rather than 24. 
+                For ZJU, there is a rigid_clusters = (0,  0,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  9,  9, 10, 11, 12, 13, 14, 15, 16, 17, 18), saved in 
+                https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/datasets/zju_parser.py#L69
+
+                https://github.com/ChenYutongTHU/TAVA_NARF/blob/529f266c2caf61c341836ba82ccb404a59295f48/tava/models/deform_posi_enc/snarf.py#L593-L597
+
+                Bones with the same cluster ids have similar movements. For example, the first three bones are \[lhip,rhip,belly] and thus should be assigned with the same linear blend skinning weights. Correspondingly, the outputdim of self.skin_Net is 19+1. One for the background.
+
+            * 2. In LBS, transformation before correction.
+                https://github.com/ChenYutongTHU/TAVA_NARF/blob/529f266c2caf61c341836ba82ccb404a59295f48/tava/models/deform_posi_enc/snarf.py#L510-L518
+                In ZJU, inverse = False.
+                
+                However, we know that in SMPL, the correction is added in the canonical space before transformation. 
+
+                Does the order matter? Correction after transformation can let the gradient signal arrive at the offset network earlier.
+
+
         * **Root-finding** step-by-step (How to train the root finding step? - inject gradient)
             * 1. Initialize - Sec.3.3 Inverse skinning. Use K=5 initialization. (no_grad)
             https://github.com/ChenYutongTHU/TAVA_NARF/blob/c709f985b4a89ec7077999a81db2f8fa702c4062/tava/models/deform_posi_enc/snarf.py#L171-L172

@@ -77,9 +77,45 @@
        Note that after reading meta_data from pose_data.pt, the key-value are then processed and reordered in 
        https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/datasets/zju_loader.py#L180
        Save as 
-       * bones_rest and bones_posed: include location of the tail joints (23,3) and the head joints' transformation (23,4,4). 
+       * bones_rest and bones_posed(=tf_bones): include location of the tail joints (23,3) and the head joints' transformation (23,4,4). A transformation describing  World coordinate -> local coordinate
+        https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/datasets/zju_loader.py#LL200C43-L200C43
+
         https://github.com/ChenYutongTHU/TAVA_NARF/blob/a0e2eabd514fa5e750ceec86eb31621682539555/tava/datasets/zju_loader.py#L208-L215
+        Later on, the LBS is calculated as 
+        https://github.com/ChenYutongTHU/TAVA_NARF/blob/529f266c2caf61c341836ba82ccb404a59295f48/tava/models/deform_posi_enc/snarf.py#L259-L264
+        https://github.com/ChenYutongTHU/TAVA_NARF/blob/529f266c2caf61c341836ba82ccb404a59295f48/tava/models/deform_posi_enc/snarf.py#L282-L284
+
        * pose_latent = params (N, 78) 78 = 3*24 (SMPL-pose params, axis-angle rotation of each bone, (0,0,0) for root) + 3 (global rotation) + 3 (global translation)
+
+## B. Scale
+### SMPL
+* V_template coordinate range
+    * x [-0.87, 0.87] 1.6 (arm stretch length, width)
+    * y [-1.16, 0.56] 1.72 height?
+    * z [-0.12, 0.17] 0.4 (depth) (belly)
+* Bounding box 
+    <----x----O
+           /  |
+          /   |
+         /    y
+        z     |
+       /      |
+      /       ⬇️ 
+    * right: rhand (22) x=-0.77
+    * left: lhand (23) x=+0.77
+    * right: rhand (22) x=-0.77
+    * down:  ltoes (10) y=-1.14
+    * up: head(15) y=+0.35
+    * back: rhand (22) z=-0.05
+    * front: rtoes (11)  z=0.09
+* However, for SMPL, we only care about the **transformation(translation) scale** because we're going to reset the center later in our NeRF. Just remember that the body's height is around 1.7, width~1.6 (two arms stretched), depth~0.4.
+* The **transformation** is also going to be multipled by a estimated global transformation (Rh, Th).
+    * Before global transformation, the origin is around the root/belly.
+    * However in ZJU, the global transformation is very weird. First, the rotation approximately switches z axis and y axis. So after global transformation. it's z rather than y aligned with the body's height. (Image someone in CT)
+    * Thus, we see multi-camera's origins are circled in x-y plane and also have same z values. This is because now z is aligned with body's height.
+    * In a nutshell, in SMPL's template, body's height is aligned with y but in ZJU's capture system. body's height is aligned with z and cameras are circled in x-y plane.
+
+
        
       
       

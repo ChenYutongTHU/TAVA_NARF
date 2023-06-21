@@ -51,7 +51,7 @@ def lbs(betas, pose, v_template, shapedirs, posedirs, J_regressor, parents,
     T = torch.matmul(
         W, A.view(batch_size, num_joints, 16)  #(B,6890,24)@(B,24,16) ->(B,6890,16)
     ).view(batch_size, -1, 4, 4)  #(B,6890,4,4)
-
+    
     homogen_coord = torch.ones([batch_size, v_posed.shape[1], 1], #(B,6890,1)
                                dtype=dtype, device=device)
     v_posed_homo = torch.cat([v_posed, homogen_coord], dim=2) #(B,6890,4)

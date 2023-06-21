@@ -76,13 +76,13 @@ def generate_rays(
                 (x - K[..., 0, 2] + 0.5) / K[..., 0, 0],
                 (y - K[..., 1, 2] + 0.5) / K[..., 1, 1],
             ],
-            dim=-1,
+            dim=-1, #x_y_z
         )
     )  # [n_cams, height, width, 3]
-    if not opencv_format:
+    if not opencv_format: #ZJU-MoCAP SNARF opencv_format=True
         camera_dirs[..., [1, 2]] *= -1
 
-    # [n_cams, height, width, 3]
+    # [n_cams, height, width, 3] #[512,512,3]
     directions = (camera_dirs[..., None, :] * c2w[..., :3, :3]).sum(dim=-1)
     origins = torch.broadcast_to(c2w[..., :3, -1], directions.shape)
     viewdirs = directions / torch.linalg.norm(directions, dim=-1, keepdims=True)

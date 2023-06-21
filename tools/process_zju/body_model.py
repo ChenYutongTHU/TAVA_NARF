@@ -112,7 +112,7 @@ class SMPLlayer(nn.Module):
         global_transform = torch.eye(4, dtype=rot.dtype, device=rot.device) #4,4 [R|T]
         global_transform[:3, :3] = rot * scale
         global_transform[:3, 3] = transl #3,1
-
+        
         vertices = torch.matmul(vertices, rot.transpose(1, 2)) * scale + transl #(B,N,3)
         joints = torch.matmul(joints, rot.transpose(1, 2)) * scale + transl #(B,N,3)
         joints_transform = torch.einsum("ij,...jk->...ik", global_transform, joints_transform) #(B,4-i,4-j) (B,24,4-j,4-k) (B,24,4,4)

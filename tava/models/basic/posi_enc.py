@@ -41,7 +41,7 @@ class PositionalEncoder(nn.Module):
             list(x.shape[:-1]) + [scales.shape[0] * x.shape[-1]],
         )
         four_feat = torch.sin(torch.cat([xb, xb + 0.5 * math.pi], dim=-1))
-        if self.append_identity:
+        if self.append_identity: #[x,y,z,sin(1*x),cos(1*x),...,sin(2^(n-1)*x),cos(2^(n-1)x)]
             return torch.cat([x] + [four_feat], dim=-1)
         else:
             return four_feat
