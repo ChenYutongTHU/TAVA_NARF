@@ -236,7 +236,7 @@ https://github.com/ChenYutongTHU/TAVA_NARF/blob/c3797b63b639d25a6bcabacd65c230e6
                https://github.com/ChenYutongTHU/TAVA_NARF/blob/e94e6571875eaa04b248163e266a665c3a74ea87/tava/models/basic/mipnerf.py#L242-L243
          * level_i=1: resample_along_rays (grads are not propagated across levels)
             * An additional param: weight  
-            * Sample from inverse CDF （Somehow complicated, please re-check it）
+            * Sample from inverse CDF （Somehow complicated, please re-check it） (piece-wise linear CDF, discrete->continuoue)
                https://github.com/ChenYutongTHU/TAVA_NARF/blob/7399d1934a06986a2db295d909c02246e4f4e9c1/tava/models/basic/mipnerf.py#L386-L391
          * query_mlp: note that now samples are (mean, variance) of frustum cones.
           https://github.com/ChenYutongTHU/TAVA_NARF/blob/01449cd2417c5abbcd17aab2937686d1525acb87/tava/models/basic/mipnerf.py#L127-L130
