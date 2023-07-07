@@ -59,9 +59,11 @@ class CachedIterDataset(torch.utils.data.IterableDataset):
             self.training
             and (self._cache is not None)
             and (self._n_repeat < self.cache_n_repeat)
-        ):
+        ) or (self.training and self.cache_n_repeat==-1 and self._cache is not None):
             data = self._cache
             self._n_repeat += 1
+            if self.cache_n_repeat==-1:
+                self._n_repeat = 0
         else:
             data = self.fetch_data(index)
             self._cache = data

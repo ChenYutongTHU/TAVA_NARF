@@ -79,6 +79,9 @@ def _run(cfg: DictConfig, hydra_config: DictConfig) -> float:
         cfg.distributed = False
     LOGGER.info("cfg is:")
     LOGGER.info(OmegaConf.to_yaml(cfg))
+    print('='*20)
+    print(os.getcwd())
+    print('='*20)
     if cfg.distributed:
         os.environ["MASTER_ADDR"] = "localhost"
         os.environ["MASTER_PORT"] = str(_find_free_port())

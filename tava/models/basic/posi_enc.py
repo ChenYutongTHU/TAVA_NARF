@@ -5,6 +5,26 @@ import math
 import torch
 import torch.nn as nn
 
+class TimeEmbedding(nn.Module):
+    def __init__(self, t_length, t_dim, type='learnable'):
+        super().__init__()
+        self.type = type
+        self.t_length = t_length
+        if type=='learnable':
+            self.embedding = nn.Embedding(
+                num_embeddings=t_length, embedding_dim=t_dim)
+        elif type=='sinusoidal':
+            self.embedding = PositionalEncoder(
+                in_dim=1, min_deg=0, max_deg=t_dim//2, append_identity=False)
+            assert self.embedding.out_dim==t_dim, (self.embedding.out_dim, t_dim)
+        else:
+            raise ValueError
+    def forward(self, t):
+        if self.type=='learnable':
+            pass
+        elif self.type=='sinusoidal':
+            t = t[None,:].float()/self.t_length
+        return self.embedding(t)
 
 class PositionalEncoder(nn.Module):
     def __init__(

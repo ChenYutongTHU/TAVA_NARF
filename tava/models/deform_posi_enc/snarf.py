@@ -12,6 +12,7 @@ from tava.utils.knn import knn_gather
 from tava.utils.point import homo
 from tava.utils.structures import Bones
 from torch import Tensor
+import os
 
 
 class _SkinWeightsNet(nn.Module):
@@ -62,6 +63,20 @@ class _OffsetsNet(nn.Module):
         :params mask: Optionally mask out some points. [...]
         :return offsets in the world space. [..., output_dim]
         """
+        import os, numpy as np
+        perturb_pose = os.environ.get("OFFSET_NET_PERTURB_POSE", "False")
+        if perturb_pose!='False':
+            if perturb_pose=='all_zeros':
+                pose_latent = torch.zeros_like(pose_latent)
+            elif perturb_pose=='permute':
+                ids = np.random.permutation(np.arange(3,72))
+                ids = [0,1,2]+ids.tolist()+[72,73,74,75,76,77]
+                pose_latent = pose_latent[ids]
+            elif 'scale_by_' in perturb_pose:
+                scale = float(perturb_pose.replace('scale_by_',''))
+                pose_latent[3:72] = pose_latent[3:72]*scale
+            else:
+                raise ValueError
         x_enc, _ = self.posi_enc(x, None, pose_latent)
         return self.net(x_enc, mask=mask)
 
@@ -92,6 +107,9 @@ class SNARFDPEncoder(nn.Module):
         self.soft_blend = soft_blend
         self.offset_net_enabled = offset_net_enabled
         self.offset_constant_zero = offset_constant_zero
+        if os.environ.get("OFFSET_CONSTANT_ZERO","False")=="True":
+            print('Set offset_constant_zero to True')
+            self.offset_constant_zero = True
         self.cano_dist = cano_dist
 
         self.skin_net = _SkinWeightsNet(n_transforms + int(with_bkgd))

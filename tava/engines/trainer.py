@@ -22,7 +22,7 @@ from tava.utils.training import (
 )
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.tensorboard import SummaryWriter
-
+import wandb
 LOGGER = logging.getLogger(__name__)
 
 
@@ -44,6 +44,13 @@ class Trainer(AbstractEngine):
             log_dir=self.save_dir, purge_step=self.init_step
         )
         self.tb_writer.add_text("cfg", str(self.cfg), 0)
+        if self.local_rank % self.world_size == 0:
+            wandb.login(key='5421ff43bf1e3a6e19103432d161c885d4bbeda8')
+            self.wandb_run = wandb.init(project='Human3D', config=cfg, resume=True)
+            wandb.run.name = '/'.join(self.save_dir.split('/')[-2:])
+            wandb.run.save()
+        else:
+            self.wandb_run = None
 
         self.learning_rate_fn = functools.partial(
             learning_rate_decay,
@@ -74,7 +81,7 @@ class Trainer(AbstractEngine):
     def build_dataset(self):
         LOGGER.info("* Creating Dataset.")
         dataset = {
-            split: instantiate(self.cfg.dataset, split=split)
+            split: instantiate(self.cfg.dataset, split=split, mode='train',)
             for split in [self.cfg.train_split]
         }
         dataset.update(
@@ -82,6 +89,7 @@ class Trainer(AbstractEngine):
                 split: instantiate(
                     self.cfg.dataset,
                     split=split,
+                    mode='eval',
                     num_rays=None,
                     cache_n_repeat=None,
                 )
@@ -98,7 +106,7 @@ class Trainer(AbstractEngine):
         LOGGER.info("Start Running in Rank %d!" % self.local_rank)
         train_dataloader = torch.utils.data.DataLoader(
             self.dataset[self.cfg.train_split],
-            num_workers=4,
+            num_workers=min(4, len(self.dataset[self.cfg.train_split])),
             batch_size=1,
             collate_fn=default_collate_fn,
         )
@@ -120,6 +128,68 @@ class Trainer(AbstractEngine):
             lr = self.learning_rate_fn(step)
             stats = self.train_step(data, lr)
             stats_trace.append(stats)
+
+              
+            if is_main_thread and step % self.cfg.save_every == 0:
+                LOGGER.info("* Saving")
+                save_ckpt(self.ckpt_dir, step, self.model, self.optimizer)
+                clean_up_ckpt(self.ckpt_dir, 5)
+
+            # evaluation on epoch.
+            eval_stats = {}
+            if (
+                self.cfg.eval_every > 0
+                and step % self.cfg.eval_every == 0
+                and step > 0
+            ):
+                for eval_split in self.cfg.eval_splits:
+                    LOGGER.info("* Evaluation on split %s." % eval_split)
+                    val_dataset = self.dataset[eval_split]
+                    eval_render_every = math.ceil(
+                        len(val_dataset)
+                        / (self.world_size * self.cfg.eval_per_gpu)
+                    )
+                    metrics = eval_epoch(
+                        self.model,
+                        val_dataset,
+                        data_preprocess_func=lambda x: self._preprocess(
+                            x, eval_split
+                        ),
+                        render_every=eval_render_every,
+                        test_chunk=self.cfg.test_chunk,
+                        save_dir=os.path.join(
+                            self.save_dir, self.cfg.eval_cache_dir, eval_split
+                        ),
+                        local_rank=self.local_rank,
+                        world_size=self.world_size,
+                    )
+                    self.model.train()
+                    eval_stats = {**eval_stats,
+                        "%s_psnr_eval" % eval_split:metrics["psnr"],
+                        "%s_ssim_eval" % eval_split:metrics["ssim"]}
+                    if is_main_thread:
+                        # save the metrics and print
+                        with open(
+                            os.path.join(
+                                self.save_dir, "%s_metrics_otf.txt" % eval_split
+                            ),
+                            mode="a",
+                        ) as fp:
+                            fp.write(
+                                "step=%d, test_render_every=%d, psnr=%.4f, ssim=%.4f\n"
+                                % (
+                                    step,
+                                    eval_render_every,
+                                    metrics["psnr"],
+                                    metrics["ssim"],
+                                )
+                            )
+                        LOGGER.info(
+                            f"Eval Epoch {step}: "
+                            + f"split = {eval_split} "
+                            + f"psnr = {metrics['psnr']:.4f} "
+                            + f"ssim = {metrics['ssim']:.4f} "
+                        )
 
             if is_main_thread and step % self.cfg.print_every == 0:
                 avg_loss = sum([s["loss"] for s in stats_trace]) / len(
@@ -149,80 +219,17 @@ class Trainer(AbstractEngine):
                     + f"{rays_per_sec:0.0f} rays/sec"
                 )
                 reset_timer = True
-                for k, v in stats.items():
+                log_scalar = {
+                    **stats, **eval_stats, 
+                    "train_avg_loss":avg_loss,
+                    "train_avg_psnr":avg_psnr,
+                    "learning_rate":lr,
+                    "train_steps_per_sec":steps_per_sec,
+                    "train_rays_per_sec":rays_per_sec}
+                for k,v in log_scalar.items():
                     self.tb_writer.add_scalar(k, v, step)
-                self.tb_writer.add_scalar("train_avg_loss", avg_loss, step)
-                self.tb_writer.add_scalar("train_avg_psnr", avg_psnr, step)
-                self.tb_writer.add_scalar("learning_rate", lr, step)
-                self.tb_writer.add_scalar(
-                    "train_steps_per_sec", steps_per_sec, step
-                )
-                self.tb_writer.add_scalar(
-                    "train_rays_per_sec", rays_per_sec, step
-                )
-
-            if is_main_thread and step % self.cfg.save_every == 0:
-                LOGGER.info("* Saving")
-                save_ckpt(self.ckpt_dir, step, self.model, self.optimizer)
-                clean_up_ckpt(self.ckpt_dir, 5)
-
-            # evaluation on epoch.
-            if (
-                self.cfg.eval_every > 0
-                and step % self.cfg.eval_every == 0
-                and step > 0
-            ):
-                for eval_split in self.cfg.eval_splits:
-                    LOGGER.info("* Evaluation on split %s." % eval_split)
-                    val_dataset = self.dataset[eval_split]
-                    eval_render_every = math.ceil(
-                        len(val_dataset)
-                        / (self.world_size * self.cfg.eval_per_gpu)
-                    )
-                    metrics = eval_epoch(
-                        self.model,
-                        val_dataset,
-                        data_preprocess_func=lambda x: self._preprocess(
-                            x, eval_split
-                        ),
-                        render_every=eval_render_every,
-                        test_chunk=self.cfg.test_chunk,
-                        save_dir=os.path.join(
-                            self.save_dir, self.cfg.eval_cache_dir, eval_split
-                        ),
-                        local_rank=self.local_rank,
-                        world_size=self.world_size,
-                    )
-                    self.model.train()
-                    self.tb_writer.add_scalar(
-                        "%s_psnr_eval" % eval_split, metrics["psnr"], step
-                    )
-                    self.tb_writer.add_scalar(
-                        "%s_ssim_eval" % eval_split, metrics["ssim"], step
-                    )
-                    if is_main_thread:
-                        # save the metrics and print
-                        with open(
-                            os.path.join(
-                                self.save_dir, "%s_metrics_otf.txt" % eval_split
-                            ),
-                            mode="a",
-                        ) as fp:
-                            fp.write(
-                                "step=%d, test_render_every=%d, psnr=%.4f, ssim=%.4f\n"
-                                % (
-                                    step,
-                                    eval_render_every,
-                                    metrics["psnr"],
-                                    metrics["ssim"],
-                                )
-                            )
-                        LOGGER.info(
-                            f"Eval Epoch {step}: "
-                            + f"split = {eval_split} "
-                            + f"psnr = {metrics['psnr']:.4f} "
-                            + f"ssim = {metrics['ssim']:.4f} "
-                        )
+                if self.wandb_run is not None:
+                    wandb.log(log_scalar)
         LOGGER.info("Finished Training in Rank %d!" % self.local_rank)
         return 1.0
 

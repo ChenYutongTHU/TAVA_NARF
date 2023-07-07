@@ -26,6 +26,7 @@ class MipNerfModel(nn.Module):
         pos_enc: nn.Module,
         # positional encoding for view directions
         view_enc: nn.Module = None,
+        t_enc: nn.Module = None,
         num_samples: int = 128,  # The number of samples per level.
         num_levels: int = 2,  # The number of sampling levels.
         # Dirichlet/alpha "padding" on the histogram.
@@ -50,6 +51,7 @@ class MipNerfModel(nn.Module):
         self.mlp = mlp
         self.pos_enc = pos_enc
         self.view_enc = view_enc
+        self.t_enc = t_enc
         self.num_samples = num_samples
         self.num_levels = num_levels
         self.resample_padding = resample_padding

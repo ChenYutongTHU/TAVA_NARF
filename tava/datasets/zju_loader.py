@@ -15,22 +15,51 @@ def _dataset_view_split(parser, split):
     _train_camera_ids = [0, 6, 12, 18]
     if split == "all":
         camera_ids = parser.camera_ids
-    elif split == "train":
+    elif split in ["train","train_val10"]:
         camera_ids = _train_camera_ids
     elif split in ["val_ind", "val_ood", "val_view"]:
         camera_ids = list(set(parser.camera_ids) - set(_train_camera_ids))
     elif split == "test":
         camera_ids = [0]
+    elif "overfit-" in split:
+        i = split.find('camera:')+len('camera:')
+        j = split.find('-frame:')
+        if ',' in split[i:j]:
+            camera_ids = split[i:j].split(',')
+        elif ':' in split[i:j]:
+            s, t = split[i:j].split(':')
+            camera_ids  = list(range(int(s),int(t)))
+        else:
+            camera_ids = [split[i:j]]
+        camera_ids = [int(ci) for ci in camera_ids]
+    else:
+        raise ValueError
     return camera_ids
 
 
 def _dataset_frame_split(parser, split):
-    if split in ["train", "val_view"]:
+    if split in ["train", "val_view",'train_val10'] or "overfit-" in split:
         splits_fp = os.path.join(parser.root_dir, "splits/train.txt")
     else:
         splits_fp = os.path.join(parser.root_dir, f"splits/{split}.txt")
     with open(splits_fp, mode="r") as fp:
         frame_list = np.loadtxt(fp, dtype=int).tolist()
+        if split=='train_val10':
+            frame_list = frame_list[0::len(frame_list)//10]
+        if "overfit-" in split:
+            i = split.find('frame:')+len('frame:')         
+            if ',' in split[i:]:
+                frame_ids = split[i:].split(',')
+            elif ':' in split[i:]:
+                s, t = split[i:].split('::')[0].split(':')
+                frame_ids  = list(range(int(s),int(t)))
+                if '::' in split[i:]:
+                    step = int(split[i:].split('::')[1])
+                    frame_ids = frame_ids[::step]
+            else:
+                frame_ids = [int(split[i:])]
+            frame_list = [frame_list[int(ii)%len(frame_list)] for ii in frame_ids]
+            print(split, 'frame_list:', frame_list)
     return frame_list
 
 
@@ -46,13 +75,15 @@ def _dataset_index_list(parser, split):
 class SubjectLoader(CachedIterDataset):
     """Single subject data loader for training and evaluation."""
 
-    SPLIT = ["all", "train", "val_ind", "val_ood", "val_view", "test"]
+    SPLIT = ["all", "train", "val_ind", "val_ood", "val_view", "test",
+            "train_val10"]
 
     def __init__(
         self,
         subject_id: str,
         root_fp: str,
         split: str,
+        mode: str,
         resize_factor: float = 1.0,
         color_bkgd_aug: str = None,
         num_rays: int = None,
@@ -61,8 +92,8 @@ class SubjectLoader(CachedIterDataset):
         far: float = None,
         legacy: bool = False,
         **kwargs,
-    ):
-        assert split in self.SPLIT, "%s" % split
+    ):  
+        assert (split in self.SPLIT) or "overfit-" in split, "%s" % split
         assert color_bkgd_aug in ["white", "black", "random"]
         self.resize_factor = resize_factor
         self.split = split
@@ -70,7 +101,7 @@ class SubjectLoader(CachedIterDataset):
         self.near = near
         self.far = far
         self.legacy = legacy
-        self.training = (num_rays is not None) and (split in ["train", "all"])
+        self.training = (num_rays is not None) and (mode=='train')
         self.color_bkgd_aug = color_bkgd_aug
         self.parser = SubjectParser(subject_id=subject_id, root_fp=root_fp)
         self.index_list = _dataset_index_list(self.parser, split)

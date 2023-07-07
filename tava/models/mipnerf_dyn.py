@@ -8,6 +8,7 @@ from tava.models.basic.mipnerf import (
     volumetric_rendering,
 )
 from tava.models.basic.mlp import MLP
+from tava.models.basic.posi_enc import TimeEmbedding
 from tava.models.deform_posi_enc.rigid import DisentangledDPEncoder
 from tava.models.deform_posi_enc.snarf import SNARFDPEncoder
 from tava.utils.bone import (
@@ -94,6 +95,11 @@ class DynMipNerfModel(MipNerfModel):
         shading_pose_dim: int = None,
         # Sample-bone distance threshold in the world space.
         world_dist: float = None,
+        t_enc_dim: int=128,
+        t_length: int=1000,
+        add_input_t: bool=False,
+        input_t_zero: bool=False,
+        t_enc_type: str='learnable',
     ):
         # `pos_enc` is a deformable positional encoding, that maps a world
         # coordinate `x_w` to its representation `x_c` conditioned on the
@@ -104,13 +110,23 @@ class DynMipNerfModel(MipNerfModel):
         self.shading_pose_dim = shading_pose_dim
         self.world_dist = world_dist
 
+        self.add_input_t, self.t_length, self.t_enc_dim = add_input_t, t_length, t_enc_dim
+        self.input_t_zero, self.t_enc_type = input_t_zero, t_enc_type
+        # Add time-latent input
+        if self.add_input_t:
+            t_enc = TimeEmbedding(
+                t_length=self.t_length, t_dim=self.t_enc_dim, 
+                type=self.t_enc_type)
+        else:
+            t_enc = None
+            self.t_enc_dim = 0
         # Define the MLP that query the color & density etc from the
         # representation `x_c`. We treat object as lambertian so we don't
         # model view-dependent color in TAVA.
         if shading_mode is None:
             # the color is not shaded (not pose-dependent).
             mlp = MLP(
-                input_dim=pos_enc.out_dim,
+                input_dim=pos_enc.out_dim+self.t_enc_dim,
                 # disable pose-conditioned color.
                 condition_dim=0,
                 # diable AO output
@@ -122,7 +138,7 @@ class DynMipNerfModel(MipNerfModel):
             # the color is implicitly conditioned on the shading condition
             assert shading_pose_dim is not None
             mlp = MLP(
-                input_dim=pos_enc.out_dim,
+                input_dim=pos_enc.out_dim+self.t_enc_dim,
                 # implicitly shading-conditioned color
                 condition_dim=shading_pose_dim,
                 # diable AO output
@@ -135,7 +151,7 @@ class DynMipNerfModel(MipNerfModel):
             # the color is scaled by ambiant occlution
             # which is learnt implicitly
             mlp = MLP(
-                input_dim=pos_enc.out_dim,
+                input_dim=pos_enc.out_dim+self.t_enc_dim,
                 # disable implicitly conditioned color
                 condition_dim=0,
                 # enable AO output
@@ -146,8 +162,9 @@ class DynMipNerfModel(MipNerfModel):
         else:
             raise ValueError(shading_mode)
 
-        super().__init__(mlp, pos_enc, num_samples=64, use_viewdirs=False)
+        super().__init__(mlp, pos_enc, t_enc=t_enc, num_samples=64, use_viewdirs=False)
         self.ao_activation = ao_activation
+
 
     def _query_mlp(
         self,
@@ -155,6 +172,7 @@ class DynMipNerfModel(MipNerfModel):
         samples,
         bones_posed,
         bones_rest,
+        meta_id,
         randomized=True,
         **kwargs,
     ):
@@ -184,6 +202,16 @@ class DynMipNerfModel(MipNerfModel):
             )
         else:
             raise ValueError(type(self.pos_enc))
+
+        # Time factors as additional input
+        if self.add_input_t:
+            if self.input_t_zero:
+                t_enc = self.t_enc(torch.tensor([0],device=x_enc.device, dtype=torch.long))
+            else:
+                t_enc = self.t_enc(torch.tensor([meta_id],device=x_enc.device, dtype=torch.long)) #B(1),1
+            t_enc = t_enc[None,:,:]
+            t_enc = torch.tile(t_enc, (x_enc.shape[0],x_enc.shape[1],1))
+            x_enc = torch.cat([x_enc, t_enc], dim=-1)
 
         # Point attribute predictions
         # TODO(ruilong): The naming of `cond_view` and `cond_extra` are confusing.
@@ -238,6 +266,7 @@ class DynMipNerfModel(MipNerfModel):
         color_bkgd: torch.Tensor,
         bones_posed: Bones,
         bones_rest: Bones,
+        meta_id: torch.Tensor,
         randomized: bool = True,
         **kwargs,
     ):
@@ -325,6 +354,7 @@ class DynMipNerfModel(MipNerfModel):
                 bones_posed,
                 bones_rest,
                 randomized=randomized,
+                meta_id=meta_id,
                 **kwargs,
             )
             if valid is not None:
