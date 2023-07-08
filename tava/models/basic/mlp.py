@@ -29,12 +29,13 @@ class MLP(nn.Module):
         condition_dim: int = 27,  # The number of conditional tensor channels.
         # The number of conditional tensor channels for ambient.
         condition_ao_dim: int = 0,
+        net_width_scale: int=1,
     ):
         super().__init__()
         self.net_depth = net_depth
-        self.net_width = net_width
+        self.net_width = net_width*net_width_scale
         self.net_depth_condition = net_depth_condition
-        self.net_width_condition = net_width_condition
+        self.net_width_condition = net_width_condition*net_width_scale
         self.net_activation = net_activation
         self.skip_layer = skip_layer
         self.num_rgb_channels = num_rgb_channels

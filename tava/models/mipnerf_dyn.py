@@ -95,6 +95,7 @@ class DynMipNerfModel(MipNerfModel):
         shading_pose_dim: int = None,
         # Sample-bone distance threshold in the world space.
         world_dist: float = None,
+        net_width_scale: int=1,
         t_enc_dim: int=128,
         t_length: int=1000,
         add_input_t: bool=False,

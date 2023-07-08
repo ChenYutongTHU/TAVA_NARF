@@ -31,6 +31,7 @@ def _dataset_view_split(parser, split):
             camera_ids  = list(range(int(s),int(t)))
         else:
             camera_ids = [split[i:j]]
+        # print(split, camera_ids)
         camera_ids = [int(ci) for ci in camera_ids]
     else:
         raise ValueError

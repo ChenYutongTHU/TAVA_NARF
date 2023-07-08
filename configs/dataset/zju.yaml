@@ -1,6 +1,6 @@
 _target_: tava.datasets.zju_loader.SubjectLoader
 
-subject_id: 313
+subject_id: 387 #313
 root_fp: "./data/zju/"
 split: ???  # to be defined in the code
 resize_factor: 0.5

@@ -46,24 +46,46 @@ class CachedIterDataset(torch.utils.data.IterableDataset):
             worker_id = worker_info.id
             iter_start = worker_id * per_worker
             iter_end = min(iter_start + per_worker, self.__len__())
-        if self.training:
+            #print('worker_info:', worker_info)
+            #print(f'worker_id:{worker_id}, iter_start:{iter_start}, iter_end:{iter_end}')
+        if self.training and self.cache_n_repeat==-1:
+            from tqdm import tqdm
+            self._cache = []
+            print(f'Workder_id {worker_id}, prepare cache')
+            for i in tqdm(range(iter_start, iter_end)):
+                self._cache.append(self.fetch_data(i))
             while True:
-                for index in iter_start + torch.randperm(iter_end - iter_start):
+                for index in torch.randperm(iter_end - iter_start):
                     yield self.__getitem__(index)
         else:
-            for index in range(iter_start, iter_end):
-                yield self.__getitem__(index)
+            if self.training:
+                while True:
+                    #print(worker_id, iter_start + torch.randperm(iter_end - iter_start))
+                    for index in iter_start + torch.randperm(iter_end - iter_start):
+                        yield self.__getitem__(index)
+            else:
+                for index in range(iter_start, iter_end):
+                    yield self.__getitem__(index)
 
     def __getitem__(self, index):
-        if (
+        if self.training and self.cache_n_repeat==-1:
+            data = self._cache[index]
+            # if self._cache is None:
+            #     data = self.fetch_data(index)
+            #     self._cache = data  
+            # else:
+            #     data = self._cache              
+            # if index not in self._cache:
+            #     data = self.fetch_data(index)
+            #     self._cache[index] = data
+            # else:
+            #     data = self._cache[index]
+        elif (
             self.training
             and (self._cache is not None)
-            and (self._n_repeat < self.cache_n_repeat)
-        ) or (self.training and self.cache_n_repeat==-1 and self._cache is not None):
+            and (self._n_repeat < self.cache_n_repeat)):
             data = self._cache
             self._n_repeat += 1
-            if self.cache_n_repeat==-1:
-                self._n_repeat = 0
         else:
             data = self.fetch_data(index)
             self._cache = data

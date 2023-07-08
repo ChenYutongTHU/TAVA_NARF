@@ -62,4 +62,9 @@ model:
   shading_mode: "implicit_AO"
   shading_pose_dim: ${dataset.pose_latent_dim}
   world_dist: ${dataset.world_dist}
+  net_width_scale: 1
+  add_input_t: False
+  t_enc_dim: 128
+  t_length: 1000
+
   
