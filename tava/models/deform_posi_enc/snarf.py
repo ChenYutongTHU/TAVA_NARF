@@ -522,7 +522,7 @@ def _linear_skinning(
     :params offsets_world: Optional, x offsets in world space. [..., N, 3]
     :return World / canonical points. [..., N, 3]
     """
-    offsets_cano = 0.0 if offsets_cano is None else offsets_cano
+    offsets_cano = 0.0 if offsets_cano is None else offsets_cano #default
     offsets_world = 0.0 if offsets_world is None else offsets_world
 
     tf = torch.einsum("...pn,...nij->...pij", weights, transforms)
@@ -531,8 +531,8 @@ def _linear_skinning(
         x_out = torch.einsum("...pij,...pj->...pi", tf.inverse(), x_in)
         return x_out[..., 0:3] - offsets_cano
     else:
-        x_in = F.pad(x + offsets_cano, (0, 1), value=1.0)
-        x_out = torch.einsum("...pij,...pj->...pi", tf, x_in)
+        x_in = F.pad(x + offsets_cano, (0, 1), value=1.0) #default offsets_cano=0
+        x_out = torch.einsum("...pij,...pj->...pi", tf, x_in) #
         return x_out[..., 0:3] + offsets_world
 
 

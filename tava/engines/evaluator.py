@@ -26,6 +26,7 @@ class Evaluator(AbstractEngine):
             split: instantiate(
                 self.cfg.dataset,
                 split=split,
+                mode='eval',
                 num_rays=None,
                 cache_n_repeat=None,
             )
@@ -60,7 +61,7 @@ class Evaluator(AbstractEngine):
         return data
 
     def run(self) -> float:  # noqa
-        if self.init_step <= 0 and (not os.path.exists(self.cfg.resume_dir)):
+        if self.init_step < 0 and (not os.path.exists(self.cfg.resume_dir)):
             LOGGER.warning(
                 "Ckpt not loaded! Please check save_dir: %s or resume_dir: %s." % (
                     self.save_dir, self.cfg.resume_dir

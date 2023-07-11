@@ -63,8 +63,10 @@ model:
   shading_pose_dim: ${dataset.pose_latent_dim}
   world_dist: ${dataset.world_dist}
   net_width_scale: 1
+  condition_on_view: False
   add_input_t: False
   t_enc_dim: 128
+  t_enc_type: learnable
   t_length: 1000
 
   

@@ -27,8 +27,11 @@ def _dataset_view_split(parser, split):
         if ',' in split[i:j]:
             camera_ids = split[i:j].split(',')
         elif ':' in split[i:j]:
-            s, t = split[i:j].split(':')
+            s, t = split[i:j].split('::')[0].split(':')
             camera_ids  = list(range(int(s),int(t)))
+            if '::' in split[i:j]:
+                step = int(split[i:j].split('::')[1])
+                camera_ids = camera_ids[::step]
         else:
             camera_ids = [split[i:j]]
         # print(split, camera_ids)
@@ -116,7 +119,18 @@ class SubjectLoader(CachedIterDataset):
         """Process the fetched / cached data with randomness."""
         rgba, rays = data["rgba"], data["rays"]
         image, alpha = torch.split(rgba, [3, 1], dim=-1)
-
+        mask = (alpha == 0) | (alpha == 1)
+        if os.environ.get('SAVE_MASK','False').lower()=='true':
+            from PIL import Image
+            mask_img = (mask.numpy()*255).astype(np.uint8)
+            mask_img = np.tile(mask_img,(1,1,3))
+            mask_img = Image.fromarray(mask_img)
+            save_path = os.path.join(
+                    self.parser.mask_dir,
+                    self.parser.image_files[data['meta_id'], data['camera_id']].replace(".jpg", "_edge.png"),
+                )
+            print('Save mask as', save_path)
+            mask_img.save(save_path)
         if self.training:
             if self.color_bkgd_aug == "random":
                 color_bkgd = torch.rand(3, dtype=rgba.dtype)
@@ -150,6 +164,7 @@ class SubjectLoader(CachedIterDataset):
             "pixels": pixels,  # [n_rays, 3] or [h, w, 3]
             "rays": rays,  # [n_rays,] or [h, w]
             "color_bkgd": color_bkgd,  # [3,]
+            "mask": mask,
             **{k: v for k, v in data.items() if k not in ["rgba", "rays"]},
         }
 
@@ -157,6 +172,7 @@ class SubjectLoader(CachedIterDataset):
         """Fetch the data (it maybe cached for multiple batches)."""
         # load data
         frame_id, camera_id = self.index_list[index]
+
         K = self.parser.cameras[camera_id]["K"].copy()
         w2c = self.parser.cameras[camera_id]["w2c"].copy()
         D = self.parser.cameras[camera_id]["D"].copy()
@@ -192,6 +208,7 @@ class SubjectLoader(CachedIterDataset):
             width=self.parser.WIDTH,
             height=self.parser.HEIGHT,
         )
+
         cameras = transform_cameras(cameras, self.resize_factor)
         rays = generate_rays(
             cameras, opencv_format=True, near=self.near, far=self.far

@@ -126,7 +126,7 @@ class DisentangledDPEncoder(_PartWiseDPEncoder):
                     )
                 )
                 for _ in range(self.n_transforms + int(self.with_bkgd))
-            ]
+            ] #each part has a single network
         )
 
     @property

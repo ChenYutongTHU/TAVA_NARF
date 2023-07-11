@@ -8,8 +8,9 @@ from tava.models.basic.mipnerf import (
     volumetric_rendering,
 )
 from tava.models.basic.mlp import MLP
-from tava.models.basic.posi_enc import TimeEmbedding
+from tava.models.basic.posi_enc import TimeEmbedding, PositionalEncoder
 from tava.models.deform_posi_enc.rigid import DisentangledDPEncoder
+from tava.models.deform_posi_enc.naive import IdentityEncoder
 from tava.models.deform_posi_enc.snarf import SNARFDPEncoder
 from tava.utils.bone import (
     closest_distance_to_points,
@@ -101,6 +102,7 @@ class DynMipNerfModel(MipNerfModel):
         add_input_t: bool=False,
         input_t_zero: bool=False,
         t_enc_type: str='learnable',
+        condition_on_view: bool=False,
     ):
         # `pos_enc` is a deformable positional encoding, that maps a world
         # coordinate `x_w` to its representation `x_c` conditioned on the
@@ -124,15 +126,25 @@ class DynMipNerfModel(MipNerfModel):
         # Define the MLP that query the color & density etc from the
         # representation `x_c`. We treat object as lambertian so we don't
         # model view-dependent color in TAVA.
+        self.condition_on_view = condition_on_view
+        if self.condition_on_view:
+            view_enc = PositionalEncoder(
+                in_dim=3, min_deg=0, max_deg=4, append_identity=True)
+            condition_dim = view_enc.out_dim #3*2*4+3?
+            
+        else:
+            view_enc = None
+            condition_dim = 0
         if shading_mode is None:
             # the color is not shaded (not pose-dependent).
             mlp = MLP(
                 input_dim=pos_enc.out_dim+self.t_enc_dim,
                 # disable pose-conditioned color.
-                condition_dim=0,
+                condition_dim=condition_dim,
                 # diable AO output
                 num_ao_channels=0,
                 condition_ao_dim=0,
+                net_width_scale=net_width_scale,
             )
             ao_activation = None
         elif shading_mode == "implicit":
@@ -145,6 +157,7 @@ class DynMipNerfModel(MipNerfModel):
                 # diable AO output
                 num_ao_channels=0,
                 condition_ao_dim=0,
+                net_width_scale=net_width_scale,
             )
             ao_activation = None
         elif shading_mode == "implicit_AO":
@@ -154,16 +167,17 @@ class DynMipNerfModel(MipNerfModel):
             mlp = MLP(
                 input_dim=pos_enc.out_dim+self.t_enc_dim,
                 # disable implicitly conditioned color
-                condition_dim=0,
+                condition_dim=condition_dim,
                 # enable AO output
                 num_ao_channels=1,
                 condition_ao_dim=shading_pose_dim,
+                net_width_scale=net_width_scale,
             )
             ao_activation = torch.nn.Sigmoid()
         else:
             raise ValueError(shading_mode)
 
-        super().__init__(mlp, pos_enc, t_enc=t_enc, num_samples=64, use_viewdirs=False)
+        super().__init__(mlp, pos_enc,  view_enc=view_enc, t_enc=t_enc, num_samples=64, use_viewdirs=False)
         self.ao_activation = ao_activation
 
 
@@ -201,6 +215,10 @@ class DynMipNerfModel(MipNerfModel):
                 rigid_clusters=kwargs.get("rigid_clusters", None),
                 pose_latent=kwargs.get("pose_latent", None),
             )
+        elif isinstance(self.pos_enc, IdentityEncoder):
+            x_enc, x_warp  = self.pos_enc(x, x_cov)
+            mask = None
+            valid = None
         else:
             raise ValueError(type(self.pos_enc))
 
@@ -224,8 +242,13 @@ class DynMipNerfModel(MipNerfModel):
                 x_enc, cond_view=kwargs["pose_latent"], masks=mask
             )
         elif self.shading_mode == "implicit_AO":
+            if self.view_enc is not None:
+                view_embed = self.view_enc(_rays.viewdirs)
+            else:
+                view_embed = None
             raw_rgb, raw_density, raw_ao = self.mlp(
-                x_enc, cond_extra=kwargs["pose_latent"], masks=mask
+                x_enc, cond_extra=kwargs["pose_latent"], masks=mask,
+                cond_view=view_embed, 
             )
 
         # Add noise to regularize the density predictions if needed.

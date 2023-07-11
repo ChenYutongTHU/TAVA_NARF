@@ -97,7 +97,7 @@ def learning_rate_decay(
         # A kind of reverse cosine decay.
         delay_rate = lr_delay_mult + (1 - lr_delay_mult) * np.sin(
             0.5 * np.pi * np.clip(step / lr_delay_steps, 0, 1)
-        )
+        ) #step>lr_delay_steps delay_rate=1; step<lr_delay_steps
     else:
         delay_rate = 1.0
     t = np.clip(step / max_steps, 0, 1)
@@ -112,6 +112,7 @@ def compute_psnr_from_mse(mse):
 def compute_psnr(pred, target, mask=None):
     """Compute psnr value (we assume the maximum pixel value is 1)."""
     if mask is not None:
+        mask = torch.tile(mask,[1,1,3])
         pred, target = pred[mask], target[mask]
     mse = ((pred - target) ** 2).mean()
     return compute_psnr_from_mse(mse)

@@ -166,7 +166,9 @@ class Trainer(AbstractEngine):
                     self.model.train()
                     eval_stats = {**eval_stats,
                         "%s_psnr_eval" % eval_split:metrics["psnr"],
-                        "%s_ssim_eval" % eval_split:metrics["ssim"]}
+                        "%s_ssim_eval" % eval_split:metrics["ssim"],
+                        "%s_psnr-m_eval" % eval_split:metrics["masked_psnr"],
+                        "%s_ssim-m_eval" % eval_split:metrics["masked_ssim"]}
                     if is_main_thread:
                         # save the metrics and print
                         with open(

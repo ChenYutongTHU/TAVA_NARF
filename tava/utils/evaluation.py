@@ -28,6 +28,8 @@ def eval_epoch(
     metrics = {
         "psnr": torch.tensor(0.0, device=device),
         "ssim": torch.tensor(0.0, device=device),
+        "masked_psnr": torch.tensor(0.0, device=device),
+        "masked_ssim": torch.tensor(0.0, device=device),
     }
 
     if world_size > 1:
@@ -71,6 +73,11 @@ def eval_epoch(
         ssim = compute_ssim(pred_color, pixels, mask=None)
         metrics["psnr"] += psnr
         metrics["ssim"] += ssim
+
+        psnr = compute_psnr(pred_color, pixels, mask=data['mask'])
+        ssim = compute_ssim(pred_color, pixels, mask=data['mask'])
+        metrics["masked_psnr"] += psnr
+        metrics["masked_ssim"] += ssim
 
         # save images
         if save_dir is not None:

@@ -3,6 +3,32 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
+class IdentityEncoder(nn.Module):
+    def __init__(self, posi_enc: nn.Module):
+        super().__init__()
+        self.posi_enc = posi_enc 
+    @property
+    def warp_dim(self):
+        return 3
+    @property
+    def out_dim(self):
+        return self.posi_enc.out_dim 
+    @property
+    def diag(self):
+        return self.posi_enc.diag
+    def forward(self, x, x_cov):
+        if x_cov is None:  # PE
+            x_enc = self.posi_enc(x)
+        else:  # IPE
+            # x_cov = (
+            #     x_cov.unsqueeze(-2).expand(list(x.shape[:-1]) + [3])
+            #     if self.posi_enc.diag
+            #     else x_cov.unsqueeze(-3).expand(
+            #         list(x.shape[:-1]) + [3, 3]
+            #     )
+            # )
+            x_enc = self.posi_enc((x, x_cov))
+        return x_enc, x
 
 class PoseConditionDPEncoder(nn.Module):
     """Naivest Deform Positional Encoder
@@ -56,3 +82,4 @@ class PoseConditionDPEncoder(nn.Module):
             x_enc = torch.cat([self.posi_enc((x, x_cov)), pose_latent], dim=-1)
         x_warp = torch.cat([x, pose_latent], dim=-1)
         return x_enc, x_warp
+
