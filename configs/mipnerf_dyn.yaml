@@ -36,6 +36,7 @@ hydra:
           - eval_cache_dir
           - compute_metrics
           - dataset.root_fp
+          - render_view_number
   run:
     # set the saving / loading directory
     dir: "outputs/\

@@ -67,9 +67,13 @@ def _dataset_frame_split(parser, split):
     return frame_list
 
 
-def _dataset_index_list(parser, split):
-    camera_ids = _dataset_view_split(parser, split)
+def _dataset_index_list(parser, split, mode, render_view_number):
     frame_list = _dataset_frame_split(parser, split)
+    if mode=='render_path':
+        assert len(frame_list)==1, frame_list
+        camera_ids = [0]*render_view_number
+    else:
+        camera_ids = _dataset_view_split(parser, split)
     index_list = []
     for frame_id in frame_list:
         index_list.extend([(frame_id, camera_id) for camera_id in camera_ids])
@@ -95,6 +99,7 @@ class SubjectLoader(CachedIterDataset):
         near: float = None,
         far: float = None,
         legacy: bool = False,
+        render_view_number: int = 0,
         **kwargs,
     ):  
         assert (split in self.SPLIT) or "overfit-" in split, "%s" % split
@@ -105,10 +110,12 @@ class SubjectLoader(CachedIterDataset):
         self.near = near
         self.far = far
         self.legacy = legacy
+        self.mode = mode
         self.training = (num_rays is not None) and (mode=='train')
         self.color_bkgd_aug = color_bkgd_aug
         self.parser = SubjectParser(subject_id=subject_id, root_fp=root_fp)
-        self.index_list = _dataset_index_list(self.parser, split)
+        self.render_view_number = render_view_number
+        self.index_list = _dataset_index_list(self.parser, split, self.mode, self.render_view_number)
         self.dtype = torch.get_default_dtype()
         super().__init__(self.training, cache_n_repeat)
 
@@ -172,10 +179,23 @@ class SubjectLoader(CachedIterDataset):
         """Fetch the data (it maybe cached for multiple batches)."""
         # load data
         frame_id, camera_id = self.index_list[index]
+        
+        if self.mode == 'render_path':
+            K = self.parser.cameras[0]["K"].copy()
+            D = self.parser.cameras[0]["D"].copy()
 
-        K = self.parser.cameras[camera_id]["K"].copy()
-        w2c = self.parser.cameras[camera_id]["w2c"].copy()
-        D = self.parser.cameras[camera_id]["D"].copy()
+            w2c_0 = self.parser.cameras[0]["w2c"].copy()
+            angle = (np.math.pi*2/self.render_view_number)*index
+            axis, center = self.parser.cameras["axis"], self.parser.cameras["center"]
+            R = axis_angle_to_matrix(torch.tensor(axis*angle)).numpy().transpose()
+            G = np.identity(4)
+            G[:3,:3] = R
+            G[:3,-1:] = (np.identity(3)-R).dot(center[...,None])
+            w2c = w2c_0.dot(G)
+        else:
+            K = self.parser.cameras[camera_id]["K"].copy()
+            w2c = self.parser.cameras[camera_id]["w2c"].copy()
+            D = self.parser.cameras[camera_id]["D"].copy()
 
         # create pixels
         rgba = np.concatenate(

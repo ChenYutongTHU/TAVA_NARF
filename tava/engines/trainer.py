@@ -178,11 +178,12 @@ class Trainer(AbstractEngine):
                             mode="a",
                         ) as fp:
                             fp.write(
-                                "step=%d, test_render_every=%d, psnr=%.4f, ssim=%.4f\n"
+                                "step=%d, test_render_every=%d, psnr=%.4f, psnr-m=%.4f, ssim=%.4f\n"
                                 % (
                                     step,
                                     eval_render_every,
                                     metrics["psnr"],
+                                    metrics["masked_psnr"],
                                     metrics["ssim"],
                                 )
                             )

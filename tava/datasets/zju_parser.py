@@ -140,8 +140,9 @@ class SubjectParser:
         R = np.array(annots_data["cams"]["R"]).astype(np.float32)
         T = np.array(annots_data["cams"]["T"]).astype(np.float32) / 1000.0
         D = np.array(annots_data["cams"]["D"]).astype(np.float32)
-        cameras = {
-            cid: {
+        cameras, pos = {}, []
+        for cid in range(K.shape[0]):
+            cameras[cid] = {
                 "K": K[cid],
                 "D": D[cid],
                 "w2c": np.concatenate(
@@ -152,8 +153,19 @@ class SubjectParser:
                     axis=0,
                 ),
             }
-            for cid in range(K.shape[0])
-        }
+            pos.append(-1*R[cid].transpose().dot(T[cid])[:,0])
+        pos = np.stack(pos, axis=0) #N, 3
+        center = np.mean(pos,axis=0) #3 
+        pos_ = pos-center
+        norm_vector = []
+        step = 4
+        for i in range(pos_.shape[0]):
+            nv = np.cross(pos_[i],pos_[(i+step)%pos_.shape[0]])
+            norm_vector.append(nv)
+        norm_vector = np.mean(np.stack(norm_vector,axis=0), axis=0) 
+        axis = norm_vector/np.linalg.norm(norm_vector)
+        cameras['axis'] = axis
+        cameras['center'] = center
         return cameras
 
     def load_image(self, frame_id, camera_id):

@@ -18,6 +18,7 @@ save_every: 1000
 test_chunk: 512
 eval_every: 10_000
 eval_splits: []
+render_view_number: 0
 eval_per_gpu: 2
 eval_cache_dir: "eval_imgs_otf"
 compute_metrics: true
